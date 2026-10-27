@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/theme/neon_colors.dart';
+import 'package:mobile/core/utils/responsive.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/presentation/shared/widgets/neon_background.dart';
 import 'package:mobile/presentation/shared/widgets/neon_button.dart';
@@ -91,9 +92,9 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         animationDuration: const Duration(seconds: 8),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: context.responsivePadding,
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
+              constraints: BoxConstraints(maxWidth: context.responsiveMaxContentWidth),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -107,7 +108,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       child: _buildAvatarSection(context),
                     ),
 
-                    const SizedBox(height: 32),
+                    SizedBox(height: context.responsiveSectionSpacing),
 
                     // Title
                     Animate(
@@ -115,7 +116,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       child: Text(
                         'Actualizar Información',
                         style: GoogleFonts.orbitron(
-                          fontSize: 24,
+                          fontSize: 24 * context.responsiveFontScale,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.5,
                           color: colorScheme.onSurface,
@@ -130,13 +131,13 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       child: Text(
                         'Modifica tus datos de cuenta',
                         style: GoogleFonts.spaceGrotesk(
-                          fontSize: 14,
+                          fontSize: 14 * context.responsiveFontScale,
                           color: colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 32),
+                    SizedBox(height: context.responsiveSectionSpacing),
 
                     // Error message
                     if (_errorMessage != null)
@@ -178,7 +179,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       ),
                     ),
 
-                    const SizedBox(height: 20),
+                    SizedBox(height: context.responsiveFieldSpacing),
 
                     // Email field
                     Animate(
@@ -207,7 +208,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       ),
                     ),
 
-                    const SizedBox(height: 32),
+                    SizedBox(height: context.responsiveSectionSpacing),
 
                     // Save button
                     Animate(
@@ -225,7 +226,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       ),
                     ),
 
-                    const SizedBox(height: 16),
+                    SizedBox(height: context.responsiveFieldSpacing),
 
                     // Cancel button
                     Animate(
@@ -241,6 +242,8 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                         onPressed: () => context.pop(),
                       ),
                     ),
+
+                    SizedBox(height: context.responsiveSectionSpacing),
                   ],
                 ),
               ),
@@ -254,20 +257,23 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   Widget _buildAvatarSection(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? NeonColors.cyanDark : NeonColors.cyanLight;
+    final avatarRadius = context.responsiveAvatarRadius;
+    final cameraButtonSize = avatarRadius * 0.64; // proportional to avatar
+    final cameraIconSize = cameraButtonSize * 0.5;
 
     return Stack(
       children: [
         NeonAvatar(
           initials: 'K',
-          radius: 50,
+          radius: avatarRadius,
           glowColor: primaryColor,
         ),
         Positioned(
           bottom: 0,
           right: 0,
           child: Container(
-            width: 32,
-            height: 32,
+            width: cameraButtonSize,
+            height: cameraButtonSize,
             decoration: BoxDecoration(
               color: primaryColor,
               shape: BoxShape.circle,
@@ -279,7 +285,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             child: Icon(
               Icons.camera_alt_rounded,
               color: Theme.of(context).colorScheme.onPrimary,
-              size: 16,
+              size: cameraIconSize,
             ),
           ),
         ),

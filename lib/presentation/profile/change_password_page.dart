@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/theme/neon_colors.dart';
+import 'package:mobile/core/utils/responsive.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/presentation/shared/widgets/neon_background.dart';
 import 'package:mobile/presentation/shared/widgets/neon_button.dart';
@@ -89,9 +90,9 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
         animationDuration: const Duration(seconds: 8),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: context.responsivePadding,
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
+              constraints: BoxConstraints(maxWidth: context.responsiveMaxContentWidth),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -105,7 +106,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                       child: _buildIcon(context),
                     ),
 
-                    const SizedBox(height: 32),
+                    SizedBox(height: context.responsiveSectionSpacing),
 
                     // Title
                     Animate(
@@ -113,7 +114,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                       child: Text(
                         'Cambiar Contraseña',
                         style: GoogleFonts.orbitron(
-                          fontSize: 24,
+                          fontSize: 24 * context.responsiveFontScale,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.5,
                           color: colorScheme.onSurface,
@@ -128,13 +129,13 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                       child: Text(
                         'Ingresa tu contraseña actual y la nueva',
                         style: GoogleFonts.spaceGrotesk(
-                          fontSize: 14,
+                          fontSize: 14 * context.responsiveFontScale,
                           color: colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 32),
+                    SizedBox(height: context.responsiveSectionSpacing),
 
                     // Error message
                     if (_errorMessage != null)
@@ -178,7 +179,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                       ),
                     ),
 
-                    const SizedBox(height: 20),
+                    SizedBox(height: context.responsiveFieldSpacing),
 
                     // New password field
                     Animate(
@@ -218,7 +219,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                       ),
                     ),
 
-                    const SizedBox(height: 20),
+                    SizedBox(height: context.responsiveFieldSpacing),
 
                     // Confirm new password field
                     Animate(
@@ -255,7 +256,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                       ),
                     ),
 
-                    const SizedBox(height: 16),
+                    SizedBox(height: context.responsiveFieldSpacing),
 
                     // Password requirements hint
                     Animate(
@@ -263,7 +264,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                       child: _buildPasswordHint(context),
                     ),
 
-                    const SizedBox(height: 32),
+                    SizedBox(height: context.responsiveSectionSpacing),
 
                     // Change password button
                     Animate(
@@ -281,7 +282,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                       ),
                     ),
 
-                    const SizedBox(height: 16),
+                    SizedBox(height: context.responsiveFieldSpacing),
 
                     // Cancel button
                     Animate(
@@ -297,6 +298,8 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                         onPressed: () => context.pop(),
                       ),
                     ),
+
+                    SizedBox(height: context.responsiveSectionSpacing),
                   ],
                 ),
               ),
@@ -310,12 +313,15 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
   Widget _buildIcon(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? NeonColors.cyanDark : NeonColors.cyanLight;
+    final iconSize = context.responsiveAvatarRadius * 1.6; // proportional to avatar
+    final containerSize = iconSize * 2;
+    final borderRadius = containerSize * 0.25;
 
     return Container(
-      width: 80,
-      height: 80,
+      width: containerSize,
+      height: containerSize,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(borderRadius),
         gradient: LinearGradient(
           colors: [
             primaryColor.withValues(alpha: 0.2),
@@ -332,7 +338,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
       ),
       child: Icon(
         Icons.lock_outline_rounded,
-        size: 40,
+        size: iconSize,
         color: primaryColor,
       ),
     );
