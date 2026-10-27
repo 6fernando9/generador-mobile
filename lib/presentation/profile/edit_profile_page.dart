@@ -1,0 +1,320 @@
+// Edit profile page for KrakenDraw
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mobile/core/theme/neon_colors.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:mobile/presentation/shared/widgets/neon_background.dart';
+import 'package:mobile/presentation/shared/widgets/neon_button.dart';
+import 'package:mobile/presentation/shared/widgets/neon_card.dart';
+import 'package:mobile/presentation/shared/widgets/neon_input.dart';
+
+/// Edit profile page
+class EditProfilePage extends ConsumerStatefulWidget {
+  const EditProfilePage({super.key});
+
+  @override
+  ConsumerState<EditProfilePage> createState() => _EditProfilePageState();
+}
+
+class _EditProfilePageState extends ConsumerState<EditProfilePage> {
+  final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _usernameFocus = FocusNode();
+  final _emailFocus = FocusNode();
+
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    // TODO: Pre-fill with current user data from profileProvider
+    _usernameController.text = 'krakendev';
+    _emailController.text = 'fernando@krakendraw.com';
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _emailController.dispose();
+    _usernameFocus.dispose();
+    _emailFocus.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSave() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    // Simulate API call
+    await Future.delayed(const Duration(seconds: 1));
+
+    // TODO: Replace with actual API call
+    // await ref.read(profileControllerProvider.notifier).updateProfile(
+    //   _usernameController.text.trim(),
+    //   _emailController.text.trim(),
+    // );
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      context.pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Perfil actualizado correctamente',
+            style: GoogleFonts.inter(),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Editar Perfil'),
+        centerTitle: true,
+      ),
+      body: NeonBackground(
+        showParticles: false,
+        animationDuration: const Duration(seconds: 8),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    // Avatar section
+                    Animate(
+                      effects: [
+                        FadeEffect(duration: 400.ms),
+                        SlideEffect(begin: const Offset(0, -0.2), end: Offset.zero, duration: 400.ms),
+                      ],
+                      child: _buildAvatarSection(context),
+                    ),
+
+                    const SizedBox(height: 32),
+
+                    // Title
+                    Animate(
+                      effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 100))],
+                      child: Text(
+                        'Actualizar Información',
+                        style: GoogleFonts.orbitron(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    Animate(
+                      effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 200))],
+                      child: Text(
+                        'Modifica tus datos de cuenta',
+                        style: GoogleFonts.spaceGrotesk(
+                          fontSize: 14,
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 32),
+
+                    // Error message
+                    if (_errorMessage != null)
+                      Animate(
+                        effects: [
+                          FadeEffect(duration: 300.ms),
+                          ShakeEffect(duration: 300.ms),
+                        ],
+                        child: _buildErrorMessage(context),
+                      ),
+
+                    // Username field
+                    Animate(
+                      effects: [
+                        FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 300)),
+                        SlideEffect(begin: const Offset(-0.2, 0), end: Offset.zero, duration: 400.ms, delay: Duration(milliseconds: 300)),
+                      ],
+                      child: NeonInput(
+                        label: 'Usuario',
+                        hint: 'tu_usuario',
+                        controller: _usernameController,
+                        focusNode: _usernameFocus,
+                        textInputAction: TextInputAction.next,
+                        prefixIcon: const Icon(Icons.person_outline_rounded),
+                        textCapitalization: TextCapitalization.none,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Ingresa un nombre de usuario';
+                          }
+                          if (value.trim().length < 3) {
+                            return 'El usuario debe tener al menos 3 caracteres';
+                          }
+                          if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value.trim())) {
+                            return 'Solo letras, números y guión bajo';
+                          }
+                          return null;
+                        },
+                        onSubmitted: (_) => _emailFocus.requestFocus(),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Email field
+                    Animate(
+                      effects: [
+                        FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 400)),
+                        SlideEffect(begin: const Offset(-0.2, 0), end: Offset.zero, duration: 400.ms, delay: Duration(milliseconds: 400)),
+                      ],
+                      child: NeonInput(
+                        label: 'Email',
+                        hint: 'tucorreo@ejemplo.com',
+                        controller: _emailController,
+                        focusNode: _emailFocus,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.done,
+                        prefixIcon: const Icon(Icons.email_outlined),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Ingresa tu email';
+                          }
+                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value.trim())) {
+                            return 'Ingresa un email válido';
+                          }
+                          return null;
+                        },
+                        onSubmitted: (_) => _handleSave(),
+                      ),
+                    ),
+
+                    const SizedBox(height: 32),
+
+                    // Save button
+                    Animate(
+                      effects: [
+                        FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 500)),
+                        SlideEffect(begin: const Offset(0, 0.2), end: Offset.zero, duration: 400.ms, delay: Duration(milliseconds: 500)),
+                      ],
+                      child: NeonButton(
+                        label: 'Guardar Cambios',
+                        icon: Icons.save_rounded,
+                        style: NeonButtonStyle.primary,
+                        isLoading: _isLoading,
+                        isFullWidth: true,
+                        onPressed: _handleSave,
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Cancel button
+                    Animate(
+                      effects: [
+                        FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 600)),
+                        SlideEffect(begin: const Offset(0, 0.2), end: Offset.zero, duration: 400.ms, delay: Duration(milliseconds: 600)),
+                      ],
+                      child: NeonButton(
+                        label: 'Cancelar',
+                        icon: Icons.close_rounded,
+                        style: NeonButtonStyle.ghost,
+                        isFullWidth: true,
+                        onPressed: () => context.pop(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvatarSection(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? NeonColors.cyanDark : NeonColors.cyanLight;
+
+    return Stack(
+      children: [
+        NeonAvatar(
+          initials: 'K',
+          radius: 50,
+          glowColor: primaryColor,
+        ),
+        Positioned(
+          bottom: 0,
+          right: 0,
+          child: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: primaryColor,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Theme.of(context).colorScheme.surface,
+                width: 3,
+              ),
+            ),
+            child: Icon(
+              Icons.camera_alt_rounded,
+              color: Theme.of(context).colorScheme.onPrimary,
+              size: 16,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildErrorMessage(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        color: Colors.redAccent.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              _errorMessage!,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: Colors.redAccent,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

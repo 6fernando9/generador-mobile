@@ -1,0 +1,387 @@
+// Login page for KrakenDraw
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mobile/core/theme/neon_colors.dart';
+import 'package:mobile/core/theme/app_theme.dart';
+import 'package:mobile/presentation/shared/widgets/neon_background.dart';
+import 'package:mobile/presentation/shared/widgets/neon_button.dart';
+import 'package:mobile/presentation/shared/widgets/neon_input.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+/// Login page with email/username and password
+class LoginPage extends ConsumerStatefulWidget {
+  const LoginPage({super.key});
+
+  @override
+  ConsumerState<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends ConsumerState<LoginPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
+
+  bool _isLoading = false;
+  bool _rememberMe = true;
+  String? _errorMessage;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    // Simulate API call
+    await Future.delayed(const Duration(seconds: 1));
+
+    // TODO: Replace with actual API call
+    // final result = await ref.read(authControllerProvider.notifier).login(
+    //   _emailController.text.trim(),
+    //   _passwordController.text,
+    //   _rememberMe,
+    // );
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+
+      // Navigate to dashboard on success
+      context.go('/dashboard');
+    }
+  }
+
+  void _navigateToRegister() {
+    context.push('/auth/register');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Scaffold(
+      body: NeonBackground(
+        showParticles: true,
+        animationDuration: const Duration(seconds: 12),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Logo
+                      _buildLogo(context)
+                          .animate()
+                          .fadeIn(duration: 500.ms)
+                          .slideY(begin: -0.2, end: 0),
+
+                      const SizedBox(height: 32),
+
+                      // Title
+                      Text(
+                        'Iniciar Sesión',
+                        style: GoogleFonts.orbitron(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.0,
+                          color: colorScheme.onSurface,
+                        ),
+                      ).animate().fadeIn(duration: 400.ms, delay: 100.ms)
+                        .slideY(begin: 0.2, end: 0),
+
+                      const SizedBox(height: 8),
+
+                      Text(
+                        'Accede a tu dashboard de KrakenDraw',
+                        style: GoogleFonts.spaceGrotesk(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w400,
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                        textAlign: TextAlign.center,
+                      ).animate().fadeIn(duration: 400.ms, delay: 200.ms)
+                        .slideY(begin: 0.2, end: 0),
+
+                      const SizedBox(height: 32),
+
+                      // Error message
+                      if (_errorMessage != null)
+                        _buildErrorMessage(context)
+                            .animate()
+                            .fadeIn(duration: 300.ms)
+                            .shake(),
+
+                      // Email/Username field
+                      NeonInput(
+                        label: 'Email o Usuario',
+                        hint: 'tucorreo@ejemplo.com',
+                        controller: _emailController,
+                        focusNode: _emailFocus,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        prefixIcon: const Icon(Icons.person_outline_rounded),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Ingresa tu email o usuario';
+                          }
+                          return null;
+                        },
+                        onSubmitted: (_) => _passwordFocus.requestFocus(),
+                      ).animate().fadeIn(duration: 400.ms, delay: 300.ms)
+                        .slideX(begin: -0.2, end: 0),
+
+                      const SizedBox(height: 20),
+
+                      // Password field
+                      NeonPasswordInput(
+                        label: 'Contraseña',
+                        hint: '••••••••',
+                        controller: _passwordController,
+                        focusNode: _passwordFocus,
+                        textInputAction: TextInputAction.done,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Ingresa tu contraseña';
+                          }
+                          if (value.length < 6) {
+                            return 'La contraseña debe tener al menos 6 caracteres';
+                          }
+                          return null;
+                        },
+                        onSubmitted: (_) => _handleLogin(),
+                      ).animate().fadeIn(duration: 400.ms, delay: 400.ms)
+                        .slideX(begin: -0.2, end: 0),
+
+                      const SizedBox(height: 16),
+
+                      // Remember me & Forgot password
+                      Row(
+                        children: [
+                          // Remember me checkbox
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Checkbox(
+                                  value: _rememberMe,
+                                  onChanged: (value) =>
+                                      setState(() => _rememberMe = value ?? true),
+                                  activeColor: colorScheme.primary,
+                                  checkColor: colorScheme.onPrimary,
+                                  side: BorderSide(
+                                    color: colorScheme.outlineVariant,
+                                    width: 1.5,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Recordarme',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Forgot password
+                          TextButton(
+                            onPressed: () {
+                              // TODO: Implement forgot password
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Función en desarrollo',
+                                    style: GoogleFonts.inter(),
+                                  ),
+                                  backgroundColor: colorScheme.surfaceContainerHighest,
+                                ),
+                              );
+                            },
+                            child: Text(
+                              '¿Olvidaste tu contraseña?',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ).animate().fadeIn(duration: 400.ms, delay: 500.ms),
+
+                      const SizedBox(height: 24),
+
+                      // Login button
+                      NeonButton(
+                        label: 'Iniciar Sesión',
+                        icon: Icons.login_rounded,
+                        style: NeonButtonStyle.primary,
+                        isLoading: _isLoading,
+                        isFullWidth: true,
+                        onPressed: _handleLogin,
+                      ).animate().fadeIn(duration: 400.ms, delay: 600.ms)
+                        .slideY(begin: 0.2, end: 0),
+
+                      const SizedBox(height: 24),
+
+                      // Divider
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Divider(
+                              color: colorScheme.outlineVariant,
+                              thickness: 1,
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              'o',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                color: colorScheme.onSurface.withValues(alpha: 0.5),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Divider(
+                              color: colorScheme.outlineVariant,
+                              thickness: 1,
+                            ),
+                          ),
+                        ],
+                      ).animate().fadeIn(duration: 400.ms, delay: 700.ms),
+
+                      const SizedBox(height: 24),
+
+                      // Register link
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '¿No tienes cuenta? ',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              color: colorScheme.onSurface.withValues(alpha: 0.6),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: _navigateToRegister,
+                            child: Text(
+                              'Regístrate',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ).animate().fadeIn(duration: 400.ms, delay: 800.ms),
+
+                      const SizedBox(height: 32),
+
+                      // Version info
+                      Text(
+                        'KrakenDraw v1.0.0',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          color: colorScheme.onSurface.withValues(alpha: 0.3),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogo(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? NeonColors.cyanDark : NeonColors.cyanLight;
+
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          colors: [
+            primaryColor.withValues(alpha: 0.2),
+            primaryColor.withValues(alpha: 0.05),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withValues(alpha: 0.3),
+            blurRadius: 25,
+            spreadRadius: 5,
+          ),
+        ],
+      ),
+      child: Icon(
+        Icons.bolt_rounded,
+        size: 40,
+        color: primaryColor,
+      ),
+    );
+  }
+
+  Widget _buildErrorMessage(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        color: Colors.redAccent.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              _errorMessage!,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: Colors.redAccent,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
