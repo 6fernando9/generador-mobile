@@ -1,4 +1,5 @@
 // Edit profile page for KrakenDraw
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -63,11 +64,17 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   void _removeSelectedAvatar() {
     setState(() {
       _avatarErrorMessage = null;
+      _selectedAvatarFile = null;
     });
+    _avatarEditKey.currentState?.setSelectedImage(null);
   }
 
-  /// Pick and upload avatar with source selection
-  Future<void> _pickAndUploadAvatar() async {
+  // Store the selected avatar file for later upload on save
+  File? _selectedAvatarFile;
+
+  /// Pick avatar with source selection (camera with preview / gallery)
+  /// Only updates the preview; upload happens when user presses "Guardar Cambios"
+  Future<void> _pickAvatar() async {
     final colorScheme = Theme.of(context).colorScheme;
 
     // Show source selection bottom sheet
@@ -98,7 +105,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             const SizedBox(width: 16),
             Text(
               source == ImageSource.camera
-                  ? 'Tomando foto...'
+                  ? 'Abriendo cámara...'
                   : 'Seleccionando imagen...',
               style: GoogleFonts.inter(color: colorScheme.onSurface),
             ),
@@ -112,50 +119,41 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
     try {
       final controller = ref.read(profileControllerProvider.notifier);
-      final processedFile = await controller.pickImageWithSource(source);
+      File? processedFile;
+
+      if (source == ImageSource.camera) {
+        // Use camera with preview flow
+        processedFile = await controller.pickImageFromCameraWithPreview(context);
+      } else {
+        // Gallery: use existing flow (pick -> crop -> compress)
+        processedFile = await controller.pickImageWithSource(source);
+      }
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
         if (processedFile != null) {
+          // Store for later upload on save
+          _selectedAvatarFile = processedFile;
+
           // Update preview in AvatarEditSection
           _avatarEditKey.currentState?.setSelectedImage(processedFile);
           setState(() {
             _avatarErrorMessage = null;
           });
 
-          // Upload to backend
-          final uploadSuccess = await controller.uploadAvatar(processedFile.path);
-
-          if (context.mounted) {
-            if (uploadSuccess) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Avatar actualizado correctamente',
-                    style: GoogleFonts.inter(),
-                  ),
-                  backgroundColor: colorScheme.surfaceContainerHighest,
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            } else {
-              final error = ref.read(profileControllerProvider).errorMessage;
-              setState(() => _avatarErrorMessage = error ?? 'Error al subir el avatar');
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    _avatarErrorMessage!,
-                    style: GoogleFonts.inter(),
-                  ),
-                  backgroundColor: Colors.redAccent.withValues(alpha: 0.9),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            }
-          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Imagen seleccionada. Presiona "Guardar Cambios" para aplicar.',
+                style: GoogleFonts.inter(),
+              ),
+              backgroundColor: colorScheme.surfaceContainerHighest,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
         } else {
-          // User cancelled crop or pick
+          // User cancelled at any step (camera, preview, crop, or gallery)
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
         }
       }
@@ -351,7 +349,34 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       _errorMessage = null;
     });
 
-    final success = await ref.read(profileControllerProvider.notifier).updateProfile(
+    final controller = ref.read(profileControllerProvider.notifier);
+
+    // Upload avatar first if a new one was selected
+    bool avatarUploadSuccess = true;
+    if (_selectedAvatarFile != null) {
+      avatarUploadSuccess = await controller.uploadAvatar(_selectedAvatarFile!.path);
+      if (!avatarUploadSuccess && mounted) {
+        final error = ref.read(profileControllerProvider).errorMessage;
+        setState(() {
+          _isLoading = false;
+          _avatarErrorMessage = error ?? 'Error al subir el avatar';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              _avatarErrorMessage!,
+              style: GoogleFonts.inter(),
+            ),
+            backgroundColor: Colors.redAccent.withValues(alpha: 0.9),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+    }
+
+    // Then update profile info (username, email)
+    final success = await controller.updateProfile(
           username: _usernameController.text.trim(),
           email: _emailController.text.trim(),
         );
@@ -417,7 +442,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                         onRemoveAvatar: _removeSelectedAvatar,
                         isLoading: profileState.isUpdating,
                         errorMessage: _avatarErrorMessage,
-                        onPickImage: _pickAndUploadAvatar,
+                        onPickImage: _pickAvatar,
                       ),
                     ),
 
@@ -576,26 +601,26 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   }
 
   Widget _buildErrorMessage(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final scale = context.responsiveFontScale;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.only(bottom: 20),
+      padding: EdgeInsets.all(16 * scale),
+      margin: EdgeInsets.only(bottom: 20 * scale),
       decoration: BoxDecoration(
         color: Colors.redAccent.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12 * scale),
         border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 20),
-          const SizedBox(width: 12),
+          Icon(Icons.error_outline_rounded, color: Colors.redAccent, size: 20 * scale),
+          SizedBox(width: 12 * scale),
           Expanded(
             child: Text(
               _errorMessage!,
               style: GoogleFonts.inter(
-                fontSize: 13,
+                fontSize: 13 * scale,
                 color: Colors.redAccent,
                 fontWeight: FontWeight.w500,
               ),

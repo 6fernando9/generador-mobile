@@ -82,7 +82,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   Widget _buildProfileContent(
-      BuildContext context, Perfil perfil, WidgetRef ref) {
+    BuildContext context,
+    Perfil perfil,
+    WidgetRef ref,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? NeonColors.cyanDark : NeonColors.cyanLight;
@@ -96,9 +99,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             effects: [
               FadeEffect(duration: 400.ms),
               SlideEffect(
-                  begin: const Offset(0, -0.2),
-                  end: Offset.zero,
-                  duration: 400.ms),
+                begin: const Offset(0, -0.2),
+                end: Offset.zero,
+                duration: 400.ms,
+              ),
             ],
             child: _buildAvatarSection(context, perfil),
           ),
@@ -110,10 +114,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             effects: [
               FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 100)),
               SlideEffect(
-                  begin: const Offset(0, 0.2),
-                  end: Offset.zero,
-                  duration: 400.ms,
-                  delay: Duration(milliseconds: 100)),
+                begin: const Offset(0, 0.2),
+                end: Offset.zero,
+                duration: 400.ms,
+                delay: Duration(milliseconds: 100),
+              ),
             ],
             child: _buildStatsRow(context, perfil),
           ),
@@ -125,10 +130,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             effects: [
               FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 200)),
               SlideEffect(
-                  begin: const Offset(0, 0.2),
-                  end: Offset.zero,
-                  duration: 400.ms,
-                  delay: Duration(milliseconds: 200)),
+                begin: const Offset(0, 0.2),
+                end: Offset.zero,
+                duration: 400.ms,
+                delay: Duration(milliseconds: 200),
+              ),
             ],
             child: _buildActionButtons(context),
           ),
@@ -140,10 +146,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             effects: [
               FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 300)),
               SlideEffect(
-                  begin: const Offset(0, 0.2),
-                  end: Offset.zero,
-                  duration: 400.ms,
-                  delay: Duration(milliseconds: 300)),
+                begin: const Offset(0, 0.2),
+                end: Offset.zero,
+                duration: 400.ms,
+                delay: Duration(milliseconds: 300),
+              ),
             ],
             child: _buildInfoSection(
               context,
@@ -170,10 +177,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             effects: [
               FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 400)),
               SlideEffect(
-                  begin: const Offset(0, 0.2),
-                  end: Offset.zero,
-                  duration: 400.ms,
-                  delay: Duration(milliseconds: 400)),
+                begin: const Offset(0, 0.2),
+                end: Offset.zero,
+                duration: 400.ms,
+                delay: Duration(milliseconds: 400),
+              ),
             ],
             child: _buildInfoSection(
               context,
@@ -192,10 +200,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             effects: [
               FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 500)),
               SlideEffect(
-                  begin: const Offset(0, 0.2),
-                  end: Offset.zero,
-                  duration: 400.ms,
-                  delay: Duration(milliseconds: 500)),
+                begin: const Offset(0, 0.2),
+                end: Offset.zero,
+                duration: 400.ms,
+                delay: Duration(milliseconds: 500),
+              ),
             ],
             child: _buildInfoSection(
               context,
@@ -204,19 +213,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               [
                 _InfoRow('Autenticación', 'Email/Contraseña'),
                 _InfoRow('Sesión actual', 'Activa en este dispositivo'),
-              ],
-              actions: [
-                TextButton.icon(
-                  onPressed: () => context.push('/profile/change-password'),
-                  icon: const Icon(Icons.lock_outline_rounded, size: 18),
-                  label: Text(
-                    'Cambiar contraseña',
-                    style: GoogleFonts.inter(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
@@ -228,10 +224,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             effects: [
               FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 600)),
               SlideEffect(
-                  begin: const Offset(0, 0.2),
-                  end: Offset.zero,
-                  duration: 400.ms,
-                  delay: Duration(milliseconds: 600)),
+                begin: const Offset(0, 0.2),
+                end: Offset.zero,
+                duration: 400.ms,
+                delay: Duration(milliseconds: 600),
+              ),
             ],
             child: NeonButton(
               label: 'Cerrar Sesión',
@@ -280,7 +277,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    onTap: () => _showAvatarActionSheet(context, perfil, heroTag),
+                    onTap: () =>
+                        _showAvatarActionSheet(context, perfil, heroTag),
                     borderRadius: BorderRadius.circular(16),
                     child: Container(
                       width: 32,
@@ -288,7 +286,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       decoration: BoxDecoration(
                         color: primaryColor,
                         shape: BoxShape.circle,
-                        border: Border.all(color: colorScheme.surface, width: 3),
+                        border: Border.all(
+                          color: colorScheme.surface,
+                          width: 3,
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: primaryColor.withValues(alpha: 0.4),
@@ -313,22 +314,23 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           Text(
             perfil.username,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: colorScheme.onSurface,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           const SizedBox(height: 4),
           // Email
           Text(
             perfil.email,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurface.withValues(alpha: 0.6),
-                ),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.6)),
           ),
           const SizedBox(height: 8),
-          // Role & Plan badges
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          // Role & Plan badges - responsive with Wrap for small screens
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
             children: [
               NeonBadge(
                 label: perfil.primaryRoleName,
@@ -336,7 +338,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 color: colorScheme.primary,
                 style: NeonBadgeStyle.soft,
               ),
-              const SizedBox(width: 8),
               NeonBadge(
                 label: perfil.planName,
                 icon: Icons.star_rounded,
@@ -354,31 +355,30 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   Widget _buildStatsRow(BuildContext context, Perfil perfil) {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 600;
 
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
+    if (isSmallScreen) {
+      // Small screens: vertical stack
+      return Column(
+        children: [
+          _buildStatCard(
             context,
             'Hoy',
             perfil.generacionesHoy.toString(),
             Icons.today_rounded,
             'cyan',
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
+          const SizedBox(height: 12),
+          _buildStatCard(
             context,
             'Total',
             perfil.generacionesTotal.toString(),
             Icons.insights_rounded,
             'magenta',
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
+          const SizedBox(height: 12),
+          _buildStatCard(
             context,
             'Días activo',
             perfil.createdAt != null
@@ -387,9 +387,46 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             Icons.calendar_today_rounded,
             'green',
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    } else {
+      // Large screens: horizontal row
+      return Row(
+        children: [
+          Expanded(
+            child: _buildStatCard(
+              context,
+              'Hoy',
+              perfil.generacionesHoy.toString(),
+              Icons.today_rounded,
+              'cyan',
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildStatCard(
+              context,
+              'Total',
+              perfil.generacionesTotal.toString(),
+              Icons.insights_rounded,
+              'magenta',
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildStatCard(
+              context,
+              'Días activo',
+              perfil.createdAt != null
+                  ? '${DateTime.now().difference(perfil.createdAt!).inDays}'
+                  : '0',
+              Icons.calendar_today_rounded,
+              'green',
+            ),
+          ),
+        ],
+      );
+    }
   }
 
   Widget _buildStatCard(
@@ -421,16 +458,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           Text(
             value,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: colorScheme.onSurface,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'Orbitron',
-                ),
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'Orbitron',
+            ),
           ),
           Text(
             label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onSurface.withValues(alpha: 0.5),
-                ),
+            style: Theme.of(context).textTheme.labelSmall
+                ?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.5)),
           ),
         ],
       ),
@@ -439,30 +475,56 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   Widget _buildActionButtons(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 600; // Breakpoint for small screens
 
-    return Row(
-      children: [
-        Expanded(
-          child: NeonButton(
+    if (isSmallScreen) {
+      // Small screens: vertical stack (Column)
+      return Column(
+        children: [
+          NeonButton(
             label: 'Editar Perfil',
             icon: Icons.edit_rounded,
             style: NeonButtonStyle.primary,
             isFullWidth: true,
             onPressed: () => context.push('/profile/edit'),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: NeonButton(
-            label: 'Contraseña',
+          const SizedBox(height: 12),
+          NeonButton(
+            label: 'Cambiar Contraseña',
             icon: Icons.lock_rounded,
             style: NeonButtonStyle.outline,
             isFullWidth: true,
             onPressed: () => context.push('/profile/change-password'),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    } else {
+      // Large screens: horizontal (Row)
+      return Row(
+        children: [
+          Expanded(
+            child: NeonButton(
+              label: 'Editar Perfil',
+              icon: Icons.edit_rounded,
+              style: NeonButtonStyle.primary,
+              isFullWidth: true,
+              onPressed: () => context.push('/profile/edit'),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: NeonButton(
+              label: 'Cambiar Contraseña',
+              icon: Icons.lock_rounded,
+              style: NeonButtonStyle.outline,
+              isFullWidth: true,
+              onPressed: () => context.push('/profile/change-password'),
+            ),
+          ),
+        ],
+      );
+    }
   }
 
   Widget _buildInfoSection(
@@ -495,9 +557,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 child: Text(
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                 ),
@@ -507,40 +569,41 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ],
           ),
           const SizedBox(height: 16),
-          ...rows.map((row) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: 120,
-                      child: Text(
-                        row.label,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onSurface.withValues(alpha: 0.5),
-                            ),
+          ...rows.map(
+            (row) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 120,
+                    child: Text(
+                      row.label,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
-                        row.value,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: row.valueColor ?? colorScheme.onSurface,
-                              fontWeight: FontWeight.w500,
-                            ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      row.value,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: row.valueColor ?? colorScheme.onSurface,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                  ],
-                ),
-              )),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildErrorState(
-      BuildContext context, String error, WidgetRef ref) {
+  Widget _buildErrorState(BuildContext context, String error, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Center(
@@ -550,20 +613,23 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline_rounded, size: 48, color: Colors.redAccent),
+            Icon(
+              Icons.error_outline_rounded,
+              size: 48,
+              color: Colors.redAccent,
+            ),
             const SizedBox(height: 16),
             Text(
               'Error al cargar perfil',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: colorScheme.onSurface,
-                  ),
+              style: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(color: colorScheme.onSurface),
             ),
             const SizedBox(height: 8),
             Text(
               error,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurface.withValues(alpha: 0.5),
-                  ),
+                color: colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -627,7 +693,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
-  void _showAvatarActionSheet(BuildContext context, Perfil perfil, String heroTag) {
+  void _showAvatarActionSheet(
+    BuildContext context,
+    Perfil perfil,
+    String heroTag,
+  ) {
     AvatarActionSheet.show(
       context,
       imageUrl: perfil.profileIcon,
@@ -709,10 +779,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           if (error != null && error.isNotEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(
-                  error,
-                  style: GoogleFonts.inter(),
-                ),
+                content: Text(error, style: GoogleFonts.inter()),
                 backgroundColor: Colors.redAccent.withValues(alpha: 0.9),
                 behavior: SnackBarBehavior.floating,
               ),
@@ -726,10 +793,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Error inesperado: $e',
-              style: GoogleFonts.inter(),
-            ),
+            content: Text('Error inesperado: $e', style: GoogleFonts.inter()),
             backgroundColor: Colors.redAccent.withValues(alpha: 0.9),
             behavior: SnackBarBehavior.floating,
           ),
@@ -797,7 +861,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
 
     try {
-      final success = await ref.read(profileControllerProvider.notifier).removeAvatar();
+      final success = await ref
+          .read(profileControllerProvider.notifier)
+          .removeAvatar();
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -832,10 +898,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Error inesperado: $e',
-              style: GoogleFonts.inter(),
-            ),
+            content: Text('Error inesperado: $e', style: GoogleFonts.inter()),
             backgroundColor: Colors.redAccent.withValues(alpha: 0.9),
             behavior: SnackBarBehavior.floating,
           ),

@@ -170,13 +170,17 @@ class _NeonButtonState extends State<NeonButton>
                     Icon(widget.icon, color: foregroundColor, size: 20),
                     const SizedBox(width: 8),
                   ],
-                  Text(
-                    widget.label,
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: foregroundColor,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        ),
+                  Flexible(
+                    child: Text(
+                      widget.label,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: foregroundColor,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                          ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
                   ),
                 ],
               ),

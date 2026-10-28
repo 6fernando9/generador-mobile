@@ -471,7 +471,8 @@ class ProfileController extends StateNotifier<ProfileState> {
     }
   }
 
-  /// Pick image with source selection (camera/gallery)
+  /// Pick image with source selection (camera/gallery) - WITH PREVIEW FOR CAMERA
+  /// Returns the processed File ready for upload, or null if user cancelled
   Future<File?> pickImageWithSource(ImageSource source) async {
     final ImagePicker picker = ImagePicker();
 
@@ -484,12 +485,96 @@ class ProfileController extends StateNotifier<ProfileState> {
 
     if (pickedFile == null) return null;
 
+    // For camera: show preview for confirmation before cropping
+    // Note: The preview UI will be handled by the calling widget (EditProfilePage)
+    // This method just returns the picked file; preview is done in the UI layer
+
     // Crop to square
     final croppedFile = await _cropImage(pickedFile.path);
     if (croppedFile == null) return null;
 
     // Compress
     return await _compressImage(croppedFile.path);
+  }
+
+  /// Pick image from camera with preview step
+  /// Returns processed File if user confirms, null if cancelled/retake
+  Future<File?> pickImageFromCameraWithPreview(BuildContext context) async {
+    while (true) {
+      // 1. Open camera
+      final ImagePicker picker = ImagePicker();
+      XFile? pickedFile;
+
+      try {
+        // Use minimal settings to avoid Xiaomi camera app crash
+        // Don't specify maxWidth/maxHeight to let camera app decide
+        // Use lower quality to reduce processing
+        pickedFile = await picker.pickImage(
+          source: ImageSource.camera,
+          imageQuality: 80,
+          requestFullMetadata: false,
+        );
+        debugPrint('Camera pick success: ${pickedFile?.path}');
+      } catch (e) {
+        // Handle platform exceptions (e.g., camera app crash on Xiaomi)
+        debugPrint('Camera picker error: $e');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al abrir la cámara: ${e.toString()}'),
+              backgroundColor: Colors.redAccent,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return null;
+      }
+
+      if (pickedFile == null) {
+        debugPrint('Camera pick returned null (user cancelled)');
+        return null; // User cancelled camera
+      }
+
+      debugPrint('Showing camera preview dialog...');
+      // 2. Show preview with Accept/Retake/Cancel options
+      final previewResult = await _showCameraPreview(context, pickedFile);
+      debugPrint('Camera preview result: $previewResult');
+
+      if (previewResult == CameraPreviewResult.accept) {
+        // 3. User accepted - proceed to crop and compress
+        debugPrint('Cropping image...');
+        final croppedFile = await _cropImage(pickedFile.path);
+        if (croppedFile == null) {
+          debugPrint('Crop cancelled');
+          return null; // User cancelled crop
+        }
+        debugPrint('Cropped: ${croppedFile.path}');
+
+        debugPrint('Compressing image...');
+        final compressedFile = await _compressImage(croppedFile.path);
+        debugPrint('Compressed: ${compressedFile?.path}');
+        return compressedFile;
+      } else if (previewResult == CameraPreviewResult.retake) {
+        // 4. User wants to retake - loop back to camera
+        debugPrint('Retake requested');
+        continue;
+      } else {
+        // 5. User cancelled preview - return null
+        debugPrint('Preview cancelled');
+        return null;
+      }
+    }
+  }
+
+  /// Show camera preview dialog with Accept/Retake/Cancel
+  Future<CameraPreviewResult> _showCameraPreview(BuildContext context, XFile file) async {
+    final bytes = await file.readAsBytes();
+
+    return await showDialog<CameraPreviewResult>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _CameraPreviewDialog(imageBytes: bytes),
+    ) ?? CameraPreviewResult.cancel;
   }
 
   /// Clean up temporary files
@@ -508,6 +593,133 @@ class ProfileController extends StateNotifier<ProfileState> {
 
   void clearError() {
     state = state.copyWith(errorMessage: null);
+  }
+}
+
+/// Result of camera preview dialog
+enum CameraPreviewResult {
+  accept,
+  retake,
+  cancel,
+}
+
+/// Dialog for camera preview with Accept/Retake/Cancel options
+class _CameraPreviewDialog extends StatelessWidget {
+  final Uint8List imageBytes;
+
+  const _CameraPreviewDialog({required this.imageBytes});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Preview image
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              child: Image.memory(
+                imageBytes,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: 300,
+              ),
+            ),
+
+            // Action buttons
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Text(
+                    '¿Te gusta la foto?',
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Puedes aceptar, volver a tomar o cancelar',
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Accept button (primary)
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () => Navigator.pop(context, CameraPreviewResult.accept),
+                      icon: const Icon(Icons.check_rounded, size: 20),
+                      label: const Text('Aceptar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Retake button (secondary)
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => Navigator.pop(context, CameraPreviewResult.retake),
+                      icon: const Icon(Icons.refresh_rounded, size: 20),
+                      label: const Text('Volver a tomar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        side: BorderSide(color: colorScheme.primary, width: 2),
+                        foregroundColor: colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Cancel button (ghost)
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton.icon(
+                      onPressed: () => Navigator.pop(context, CameraPreviewResult.cancel),
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      label: const Text('Cancelar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        foregroundColor: colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
