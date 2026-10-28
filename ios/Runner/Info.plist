@@ -66,5 +66,14 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- Camera permission for avatar photo -->
+	<key>NSCameraUsageDescription</key>
+	<string>KrakenDraw necesita acceso a la cámara para tomar fotos de perfil</string>
+	<!-- Photo library permission for avatar selection -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>KrakenDraw necesita acceso a la galería para seleccionar fotos de perfil</string>
+	<!-- Photo library add permission (iOS 14+) -->
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>KrakenDraw necesita permiso para guardar fotos en la galería</string>
 </dict>
 </plist>

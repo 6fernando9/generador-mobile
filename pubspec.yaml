@@ -30,7 +30,9 @@ dependencies:
 
   # Utils
   intl: ^0.19.0
-  image_picker: ^1.0.7
+  image_picker: ^1.1.2
+  image_cropper: ^8.0.2
+  image: ^4.2.0
   path_provider: ^2.1.4
 
   # UI: Skeleton loaders, animations

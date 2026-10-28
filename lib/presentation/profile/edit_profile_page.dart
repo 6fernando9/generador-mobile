@@ -8,10 +8,11 @@ import 'package:mobile/core/utils/responsive.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/presentation/shared/widgets/neon_background.dart';
 import 'package:mobile/presentation/shared/widgets/neon_button.dart';
-import 'package:mobile/presentation/shared/widgets/neon_card.dart';
 import 'package:mobile/presentation/shared/widgets/neon_input.dart';
 import 'package:mobile/presentation/profile/profile_controller.dart';
+import 'package:mobile/presentation/profile/widgets/avatar_edit_section.dart';
 import 'package:mobile/data/models/profile_models.dart';
+import 'package:image_picker/image_picker.dart';
 
 /// Edit profile page
 class EditProfilePage extends ConsumerStatefulWidget {
@@ -28,9 +29,16 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   final _usernameFocus = FocusNode();
   final _emailFocus = FocusNode();
 
+  // Avatar section key for accessing setSelectedImage
+  final _avatarEditKey = GlobalKey<AvatarEditSectionState>();
+
   bool _isLoading = false;
   String? _errorMessage;
   Perfil? _currentProfile;
+
+  // Avatar state
+  String? _avatarErrorMessage;
+  final String _avatarHeroTag = 'profile-avatar-edit';
 
   @override
   void initState() {
@@ -49,6 +57,281 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         });
       }
     });
+  }
+
+  /// Remove selected avatar (revert to current)
+  void _removeSelectedAvatar() {
+    setState(() {
+      _avatarErrorMessage = null;
+    });
+  }
+
+  /// Pick and upload avatar with source selection
+  Future<void> _pickAndUploadAvatar() async {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    // Show source selection bottom sheet
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => _buildImageSourceSheet(context),
+    );
+
+    if (source == null) return;
+
+    // Show loading indicator
+    if (!context.mounted) return;
+    // ignore: use_build_context_synchronously
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Text(
+              source == ImageSource.camera
+                  ? 'Tomando foto...'
+                  : 'Seleccionando imagen...',
+              style: GoogleFonts.inter(color: colorScheme.onSurface),
+            ),
+          ],
+        ),
+        backgroundColor: colorScheme.surfaceContainerHighest,
+        duration: const Duration(seconds: 30),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+
+    try {
+      final controller = ref.read(profileControllerProvider.notifier);
+      final processedFile = await controller.pickImageWithSource(source);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+        if (processedFile != null) {
+          // Update preview in AvatarEditSection
+          _avatarEditKey.currentState?.setSelectedImage(processedFile);
+          setState(() {
+            _avatarErrorMessage = null;
+          });
+
+          // Upload to backend
+          final uploadSuccess = await controller.uploadAvatar(processedFile.path);
+
+          if (context.mounted) {
+            if (uploadSuccess) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Avatar actualizado correctamente',
+                    style: GoogleFonts.inter(),
+                  ),
+                  backgroundColor: colorScheme.surfaceContainerHighest,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            } else {
+              final error = ref.read(profileControllerProvider).errorMessage;
+              setState(() => _avatarErrorMessage = error ?? 'Error al subir el avatar');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    _avatarErrorMessage!,
+                    style: GoogleFonts.inter(),
+                  ),
+                  backgroundColor: Colors.redAccent.withValues(alpha: 0.9),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          }
+        } else {
+          // User cancelled crop or pick
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        setState(() => _avatarErrorMessage = 'Error inesperado: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error inesperado: $e',
+              style: GoogleFonts.inter(),
+            ),
+            backgroundColor: Colors.redAccent.withValues(alpha: 0.9),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Build image source selection bottom sheet (camera/gallery)
+  Widget _buildImageSourceSheet(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + bottomPadding),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag handle
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colorScheme.onSurface.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Seleccionar imagen',
+                style: GoogleFonts.spaceGrotesk(
+                  color: colorScheme.onSurface,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Elige de dónde tomar la foto',
+                style: GoogleFonts.inter(
+                  color: colorScheme.onSurface.withValues(alpha: 0.5),
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 24),
+              _buildSourceOption(
+                context,
+                icon: Icons.camera_alt_rounded,
+                label: 'Cámara',
+                subtitle: 'Tomar una foto ahora',
+                color: NeonColors.getNeon('cyan', isDark),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              const SizedBox(height: 12),
+              _buildSourceOption(
+                context,
+                icon: Icons.photo_library_rounded,
+                label: 'Galería',
+                subtitle: 'Elegir de tus fotos',
+                color: NeonColors.getNeon('magenta', isDark),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: Text(
+                  'Cancelar',
+                  style: GoogleFonts.spaceGrotesk(
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSourceOption(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: GoogleFonts.spaceGrotesk(
+                        color: colorScheme.onSurface,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: GoogleFonts.inter(
+                        color: colorScheme.onSurface.withValues(alpha: 0.5),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: colorScheme.onSurface.withValues(alpha: 0.3),
+                size: 24,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -113,13 +396,29 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    // Avatar section
+                    // Avatar section with edit capabilities
                     Animate(
                       effects: [
                         FadeEffect(duration: 400.ms),
                         SlideEffect(begin: const Offset(0, -0.2), end: Offset.zero, duration: 400.ms),
                       ],
-                      child: _buildAvatarSection(context),
+                      child: AvatarEditSection(
+                        key: _avatarEditKey,
+                        currentImageUrl: _currentProfile?.profileIcon,
+                        initials: _currentProfile?.username.substring(0, 1).toUpperCase() ?? 'K',
+                        glowColor: Theme.of(context).brightness == Brightness.dark
+                            ? NeonColors.cyanDark
+                            : NeonColors.cyanLight,
+                        heroTag: _avatarHeroTag,
+                        onImageChanged: (_) {
+                          // Preview is handled internally by AvatarEditSection
+                          // This callback can be used for additional logic if needed
+                        },
+                        onRemoveAvatar: _removeSelectedAvatar,
+                        isLoading: profileState.isUpdating,
+                        errorMessage: _avatarErrorMessage,
+                        onPickImage: _pickAndUploadAvatar,
+                      ),
                     ),
 
                     SizedBox(height: context.responsiveSectionSpacing),
@@ -273,50 +572,6 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         ),
       ),
       ),
-    );
-  }
-
-  Widget _buildAvatarSection(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = isDark ? NeonColors.cyanDark : NeonColors.cyanLight;
-    final avatarRadius = context.responsiveAvatarRadius;
-    final cameraButtonSize = avatarRadius * 0.64; // proportional to avatar
-    final cameraIconSize = cameraButtonSize * 0.5;
-
-    String initials = 'K';
-    if (_currentProfile != null) {
-      initials = _currentProfile!.username.substring(0, 1).toUpperCase();
-    }
-
-    return Stack(
-      children: [
-        NeonAvatar(
-          initials: initials,
-          radius: avatarRadius,
-          glowColor: primaryColor,
-        ),
-        Positioned(
-          bottom: 0,
-          right: 0,
-          child: Container(
-            width: cameraButtonSize,
-            height: cameraButtonSize,
-            decoration: BoxDecoration(
-              color: primaryColor,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Theme.of(context).colorScheme.surface,
-                width: 3,
-              ),
-            ),
-            child: Icon(
-              Icons.camera_alt_rounded,
-              color: Theme.of(context).colorScheme.onPrimary,
-              size: cameraIconSize,
-            ),
-          ),
-        ),
-      ],
     );
   }
 
