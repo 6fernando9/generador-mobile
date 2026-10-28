@@ -705,16 +705,20 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           );
         } else {
           final error = ref.read(profileControllerProvider).errorMessage;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                error ?? 'Error al actualizar el avatar',
-                style: GoogleFonts.inter(),
+          // Only show error if there's an actual error message (not user cancellation)
+          if (error != null && error.isNotEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  error,
+                  style: GoogleFonts.inter(),
+                ),
+                backgroundColor: Colors.redAccent.withValues(alpha: 0.9),
+                behavior: SnackBarBehavior.floating,
               ),
-              backgroundColor: Colors.redAccent.withValues(alpha: 0.9),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+            );
+          }
+          // If error is null, it was a user cancellation - do nothing
         }
       }
     } catch (e) {

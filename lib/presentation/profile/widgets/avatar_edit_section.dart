@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:mobile/core/theme/neon_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/presentation/profile/widgets/avatar_action_sheet.dart';
+import 'package:mobile/core/network/api_client.dart';
 
 /// Avatar edit section with live preview for EditProfilePage
 class AvatarEditSection extends StatefulWidget {
@@ -200,6 +201,9 @@ class AvatarEditSectionState extends State<AvatarEditSection> {
     final radius = 50.0;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Build full image URL using ApiClient (handles relative paths and fixes localhost storage URLs)
+    final fullImageUrl = ApiClient.instance.buildImageUrl(imageUrl);
+
     Widget avatar;
 
     if (_selectedImage != null) {
@@ -222,7 +226,7 @@ class AvatarEditSectionState extends State<AvatarEditSection> {
           ],
         ),
       );
-    } else if (imageUrl != null) {
+    } else if (fullImageUrl.isNotEmpty) {
       // Show current avatar from network
       avatar = Container(
         width: radius * 2,
@@ -243,7 +247,7 @@ class AvatarEditSectionState extends State<AvatarEditSection> {
             ),
           ],
           image: DecorationImage(
-            image: NetworkImage(imageUrl),
+            image: NetworkImage(fullImageUrl),
             fit: BoxFit.cover,
           ),
         ),

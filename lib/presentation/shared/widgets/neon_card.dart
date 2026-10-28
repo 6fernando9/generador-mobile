@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:vector_math/vector_math_64.dart' hide Colors;
 import '../../../core/theme/app_theme.dart';
+import '../../../core/network/api_client.dart';
 
 /// Base neon card with glow effects
 class GlowCard extends StatelessWidget {
@@ -506,6 +507,9 @@ class NeonAvatar extends StatelessWidget {
     final effectiveBgColor = backgroundColor ?? colorScheme.primary;
     final effectiveTextColor = textColor ?? colorScheme.onPrimary;
 
+    // Build full image URL using ApiClient (handles relative paths and fixes localhost storage URLs)
+    final fullImageUrl = ApiClient.instance.buildImageUrl(imageUrl);
+
     Widget avatar = Container(
       width: radius * 2,
       height: radius * 2,
@@ -524,14 +528,14 @@ class NeonAvatar extends StatelessWidget {
             spreadRadius: 2,
           ),
         ],
-        image: imageUrl != null
+        image: fullImageUrl.isNotEmpty
             ? DecorationImage(
-                image: NetworkImage(imageUrl!),
+                image: NetworkImage(fullImageUrl),
                 fit: BoxFit.cover,
               )
             : null,
       ),
-      child: imageUrl == null
+      child: fullImageUrl.isEmpty
           ? Center(
               child: Text(
                 initials ?? '?',

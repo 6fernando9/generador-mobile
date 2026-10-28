@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:mobile/core/theme/neon_colors.dart';
 import 'package:mobile/presentation/shared/widgets/neon_button.dart';
+import 'package:mobile/core/network/api_client.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// Full-screen avatar preview with zoom/pan gestures
@@ -361,6 +362,9 @@ class _AvatarPreviewModalState extends State<AvatarPreviewModal>
   Widget _buildAvatar() {
     final radius = 120.0;
 
+    // Build full image URL using ApiClient (handles relative paths and fixes localhost storage URLs)
+    final fullImageUrl = ApiClient.instance.buildImageUrl(widget.imageUrl);
+
     return Container(
       width: radius * 2,
       height: radius * 2,
@@ -379,14 +383,14 @@ class _AvatarPreviewModalState extends State<AvatarPreviewModal>
             spreadRadius: 5,
           ),
         ],
-        image: widget.imageUrl != null
+        image: fullImageUrl.isNotEmpty
             ? DecorationImage(
-                image: NetworkImage(widget.imageUrl!),
+                image: NetworkImage(fullImageUrl),
                 fit: BoxFit.cover,
               )
             : null,
       ),
-      child: widget.imageUrl == null
+      child: fullImageUrl.isEmpty
           ? Center(
               child: Text(
                 widget.initials,

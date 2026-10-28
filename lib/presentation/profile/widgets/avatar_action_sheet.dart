@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:mobile/core/theme/neon_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:mobile/core/network/api_client.dart';
 import 'avatar_preview_modal.dart';
 
 /// Bottom sheet for avatar actions: View, Change, Remove
@@ -259,6 +260,9 @@ class AvatarActionSheet extends StatelessWidget {
   Widget _buildAvatarPreview() {
     final radius = 50.0;
 
+    // Build full image URL using ApiClient (handles relative paths and fixes localhost storage URLs)
+    final fullImageUrl = ApiClient.instance.buildImageUrl(imageUrl);
+
     return Container(
       width: radius * 2,
       height: radius * 2,
@@ -277,14 +281,14 @@ class AvatarActionSheet extends StatelessWidget {
             spreadRadius: 3,
           ),
         ],
-        image: imageUrl != null
+        image: fullImageUrl.isNotEmpty
             ? DecorationImage(
-                image: NetworkImage(imageUrl!),
+                image: NetworkImage(fullImageUrl),
                 fit: BoxFit.cover,
               )
             : null,
       ),
-      child: imageUrl == null
+      child: fullImageUrl.isEmpty
           ? Center(
               child: Text(
                 initials,

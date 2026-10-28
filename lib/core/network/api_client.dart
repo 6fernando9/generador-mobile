@@ -84,6 +84,49 @@ class ApiClient {
     return await _cookieJar.loadForRequest(uri);
   }
 
+  /// Get base URL without /api suffix for building image URLs
+  String get baseUrlForImages {
+    final baseUrl = dio.options.baseUrl;
+    // Remove /api suffix if present
+    if (baseUrl.endsWith('/api')) {
+      return baseUrl.substring(0, baseUrl.length - 4);
+    }
+    return baseUrl;
+  }
+
+  /// Build full image URL from relative path
+  String buildImageUrl(String? relativePath) {
+    if (relativePath == null || relativePath.isEmpty) return '';
+    // If already absolute URL, return as is
+    if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+      return _fixStorageUrl(relativePath);
+    }
+    // Ensure relative path starts with /
+    final path = relativePath.startsWith('/') ? relativePath : '/$relativePath';
+    return '$baseUrlForImages$path';
+  }
+
+  /// Fix storage URLs that use localhost (backend internal) to use the actual backend host
+  /// Backend returns URLs like http://localhost:4566/... but on device we need http://<backend-host>:4566/...
+  String _fixStorageUrl(String url) {
+    try {
+      final uri = Uri.parse(url);
+      // Check if it's the storage URL pattern (localhost:4566)
+      if (uri.host == 'localhost' && uri.port == 4566) {
+        // Extract host from API base URL
+        final apiUri = Uri.parse(dio.options.baseUrl);
+        final fixedUri = uri.replace(
+          host: apiUri.host,
+          port: 4566,
+        );
+        return fixedUri.toString();
+      }
+    } catch (_) {
+      // If parsing fails, return original URL
+    }
+    return url;
+  }
+
   /// Clear all cookies (logout)
   Future<void> clearCookies() async {
     await _cookieJar.deleteAll();
