@@ -18,6 +18,7 @@ import 'package:intl/intl.dart';
 import 'package:mobile/presentation/profile/widgets/avatar_preview_modal.dart';
 import 'package:mobile/presentation/profile/widgets/avatar_action_sheet.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mobile/main.dart' show AppBottomNavBar;
 
 /// Profile page with avatar, info, and actions
 class ProfilePage extends ConsumerStatefulWidget {
@@ -44,16 +45,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mi Perfil'),
+        title: const Text('Perfil'),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_rounded),
-            onPressed: () {
-              // TODO: Navigate to settings
-            },
-          ),
-        ],
       ),
       body: NeonBackground(
         showParticles: false,
@@ -78,6 +71,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           ),
         ),
       ),
+      bottomNavigationBar: const AppBottomNavBar(),
     );
   }
 
@@ -439,34 +433,46 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = NeonColors.getNeon(neonColor, isDark);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 600;
+    final scale = isSmallScreen
+        ? 1.1
+        : 1.0; // Slightly larger on small screens for better touch targets
 
     return GlowCard(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16 * scale),
       glowColor: NeonColors.getGlow(neonColor, isDark),
       child: Column(
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 40 * scale,
+            height: 40 * scale,
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(10 * scale),
             ),
-            child: Icon(icon, color: color, size: 20),
+            child: Icon(icon, color: color, size: 20 * scale),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8 * scale),
           Text(
             value,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               color: colorScheme.onSurface,
               fontWeight: FontWeight.w700,
               fontFamily: 'Orbitron',
+              fontSize:
+                  (Theme.of(context).textTheme.headlineSmall?.fontSize ?? 24) *
+                  scale,
             ),
           ),
           Text(
             label,
-            style: Theme.of(context).textTheme.labelSmall
-                ?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.5)),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: colorScheme.onSurface.withValues(alpha: 0.5),
+              fontSize:
+                  (Theme.of(context).textTheme.labelSmall?.fontSize ?? 12) *
+                  scale,
+            ),
           ),
         ],
       ),

@@ -15,6 +15,7 @@ import 'presentation/dashboard/dashboard_page.dart'
 import 'presentation/profile/profile_page.dart';
 import 'presentation/profile/edit_profile_page.dart';
 import 'presentation/profile/change_password_page.dart';
+import 'presentation/chat/chat_page.dart';
 import 'presentation/shared/theme/theme_switcher.dart';
 
 /// Global navigator key for navigation without context
@@ -79,6 +80,11 @@ final GoRouter _router = GoRouter(
             ),
           ],
         ),
+        GoRoute(
+          path: '/chat',
+          name: 'chat',
+          builder: (context, state) => const ChatPage(),
+        ),
       ],
     ),
   ],
@@ -118,22 +124,13 @@ class KrakenDrawApp extends ConsumerWidget {
   }
 }
 
-/// App shell with bottom navigation
-class _AppShell extends ConsumerStatefulWidget {
-  final Widget child;
-
-  const _AppShell({required this.child});
-
-  @override
-  ConsumerState<_AppShell> createState() => _AppShellState();
-}
-
-class _AppShellState extends ConsumerState<_AppShell> {
-  int _currentIndex = 0;
+// Shared bottom navigation bar for authenticated pages
+class AppBottomNavBar extends ConsumerWidget {
+  const AppBottomNavBar({super.key});
 
   static const List<_NavItem> _navItems = [
     _NavItem(
-      icon: Icons.dashboard_rounded,
+      icon: Icons.dashboard_outlined,
       activeIcon: Icons.dashboard_rounded,
       label: 'Dashboard',
       route: '/dashboard',
@@ -144,31 +141,35 @@ class _AppShellState extends ConsumerState<_AppShell> {
       label: 'Perfil',
       route: '/profile',
     ),
+    _NavItem(
+      icon: Icons.chat_bubble_outline_rounded,
+      activeIcon: Icons.chat_bubble_rounded,
+      label: 'Chat',
+      route: '/chat',
+    ),
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final location = GoRouterState.of(context).uri.toString();
-    _currentIndex = _navItems.indexWhere((item) => location.startsWith(item.route));
-    if (_currentIndex == -1) _currentIndex = 0;
 
-    return Scaffold(
-      body: widget.child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          if (index != _currentIndex) {
-            context.go(_navItems[index].route);
-          }
-        },
-        destinations: _navItems.map((item) {
-          return NavigationDestination(
-            icon: Icon(item.icon),
-            selectedIcon: Icon(item.activeIcon),
-            label: item.label,
-          );
-        }).toList(),
-      ),
+    final currentIndex = _navItems.indexWhere((item) => location.startsWith(item.route));
+    final safeIndex = currentIndex == -1 ? 0 : currentIndex;
+
+    return NavigationBar(
+      selectedIndex: safeIndex,
+      onDestinationSelected: (index) {
+        if (index != safeIndex) {
+          context.go(_navItems[index].route);
+        }
+      },
+      destinations: _navItems.map((item) {
+        return NavigationDestination(
+          icon: Icon(item.icon),
+          selectedIcon: Icon(item.activeIcon),
+          label: item.label,
+        );
+      }).toList(),
     );
   }
 }
@@ -185,6 +186,18 @@ class _NavItem {
     required this.label,
     required this.route,
   });
+}
+
+/// App shell with bottom navigation - just passes through the child
+class _AppShell extends ConsumerWidget {
+  final Widget child;
+
+  const _AppShell({required this.child});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return child;
+  }
 }
 
 /// App initialization provider

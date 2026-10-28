@@ -487,12 +487,16 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                 color: colorScheme.primary,
               ),
               SizedBox(width: 8 * scale),
-              Text(
-                'Requisitos de contraseña',
-                style: GoogleFonts.inter(
-                  fontSize: 13 * scale,
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurface,
+              Expanded(
+                child: Text(
+                  'Requisitos de contraseña',
+                  style: GoogleFonts.inter(
+                    fontSize: 13 * scale,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
             ],

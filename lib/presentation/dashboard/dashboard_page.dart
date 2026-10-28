@@ -2,20 +2,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mobile/core/theme/neon_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/presentation/shared/widgets/neon_background.dart';
 import 'package:mobile/presentation/shared/widgets/neon_button.dart';
 import 'package:mobile/presentation/shared/widgets/neon_card.dart';
-import 'package:mobile/presentation/shared/widgets/skeleton_base.dart';
 import 'package:mobile/presentation/shared/theme/theme_switcher.dart';
-import 'package:mobile/presentation/dashboard/widgets/metrics_cards.dart';
 import 'package:mobile/presentation/dashboard/widgets/download_history_list.dart';
 import 'package:mobile/presentation/dashboard/widgets/membership_history_list.dart';
-import 'package:mobile/presentation/dashboard/skeleton/metrics_skeleton.dart';
-import 'package:mobile/presentation/dashboard/skeleton/history_list_skeleton.dart';
-import 'package:mobile/presentation/dashboard/skeleton/membership_skeleton.dart';
+import 'package:mobile/main.dart' show AppBottomNavBar;
 
 /// Dashboard page with tabs for Overview, History, and Memberships
 class DashboardPage extends ConsumerStatefulWidget {
@@ -59,56 +54,55 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        title: Text(_tabs[_selectedIndex].label),
         centerTitle: true,
         actions: [
-          // Profile avatar button
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: NeonIconButton(
-              icon: Icons.person_outline_rounded,
-              tooltip: 'Perfil',
-              style: NeonButtonStyle.ghost,
-              onPressed: () => context.go('/profile'),
-            ),
-          ),
           // Theme toggle
           ThemeToggleButton(
             iconSize: 22,
           ),
           const SizedBox(width: 8),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: colorScheme.primary,
-          labelColor: colorScheme.primary,
-          unselectedLabelColor: colorScheme.onSurface.withValues(alpha: 0.5),
-          tabs: _tabs.map((tab) => Tab(icon: Icon(tab.icon), text: tab.label)).toList(),
-        ),
       ),
       body: NeonBackground(
         showParticles: false,
         animationDuration: const Duration(seconds: 8),
         child: SafeArea(
-          child: TabBarView(controller: _tabController, children: [
-            _buildOverviewTab(context),
-            _buildHistoryTab(context),
-            _buildMembershipsTab(context),
-          ]),
+          child: Column(
+            children: [
+              // TabBarView content (expanded)
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildOverviewTab(context),
+                    _buildHistoryTab(context),
+                    _buildMembershipsTab(context),
+                  ],
+                ),
+              ),
+              // TabBar at bottom of content area
+              TabBar(
+                controller: _tabController,
+                indicatorColor: colorScheme.primary,
+                labelColor: colorScheme.primary,
+                unselectedLabelColor: colorScheme.onSurface.withValues(alpha: 0.5),
+                tabs: _tabs.map((tab) => Tab(icon: Icon(tab.icon), text: tab.label)).toList(),
+              ),
+            ],
+          ),
         ),
       ),
-      bottomNavigationBar: _buildBottomNav(context),
+      bottomNavigationBar: const AppBottomNavBar(),
     );
   }
 
   Widget _buildOverviewTab(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = isDark ? NeonColors.cyanDark : NeonColors.cyanLight;
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -426,27 +420,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
           MembershipHistoryList(),
         ],
       ),
-    );
-  }
-
-  Widget _buildBottomNav(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return NavigationBar(
-      selectedIndex: _selectedIndex,
-      onDestinationSelected: (index) {
-        setState(() {
-          _selectedIndex = index;
-          _tabController.animateTo(index);
-        });
-      },
-      destinations: _tabs.map((tab) {
-        return NavigationDestination(
-          icon: Icon(tab.icon),
-          selectedIcon: Icon(tab.icon, color: colorScheme.primary),
-          label: tab.label,
-        );
-      }).toList(),
     );
   }
 
