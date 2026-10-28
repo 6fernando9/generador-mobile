@@ -10,6 +10,8 @@ import 'package:mobile/presentation/shared/widgets/neon_background.dart';
 import 'package:mobile/presentation/shared/widgets/neon_button.dart';
 import 'package:mobile/presentation/shared/widgets/neon_card.dart';
 import 'package:mobile/presentation/shared/widgets/neon_input.dart';
+import 'package:mobile/presentation/profile/profile_controller.dart';
+import 'package:mobile/data/models/profile_models.dart';
 
 /// Edit profile page
 class EditProfilePage extends ConsumerStatefulWidget {
@@ -28,13 +30,25 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
   bool _isLoading = false;
   String? _errorMessage;
+  Perfil? _currentProfile;
 
   @override
   void initState() {
     super.initState();
-    // TODO: Pre-fill with current user data from profileProvider
-    _usernameController.text = 'krakendev';
-    _emailController.text = 'fernando@krakendraw.com';
+    _loadCurrentProfile();
+  }
+
+  Future<void> _loadCurrentProfile() async {
+    final profileState = ref.read(profileControllerProvider);
+    profileState.profile.whenData((perfil) {
+      if (mounted) {
+        setState(() {
+          _currentProfile = perfil;
+          _usernameController.text = perfil.username;
+          _emailController.text = perfil.email;
+        });
+      }
+    });
   }
 
   @override
@@ -54,33 +68,32 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       _errorMessage = null;
     });
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
-
-    // TODO: Replace with actual API call
-    // await ref.read(profileControllerProvider.notifier).updateProfile(
-    //   _usernameController.text.trim(),
-    //   _emailController.text.trim(),
-    // );
+    final success = await ref.read(profileControllerProvider.notifier).updateProfile(
+          username: _usernameController.text.trim(),
+          email: _emailController.text.trim(),
+        );
 
     if (mounted) {
       setState(() => _isLoading = false);
-      context.pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Perfil actualizado correctamente',
-            style: GoogleFonts.inter(),
+      if (success) {
+        context.pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Perfil actualizado correctamente',
+              style: GoogleFonts.inter(),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
           ),
-          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-        ),
-      );
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final profileState = ref.watch(profileControllerProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -91,11 +104,12 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         showParticles: false,
         animationDuration: const Duration(seconds: 8),
         child: SafeArea(
-          child: SingleChildScrollView(
-            padding: context.responsivePadding,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: context.responsiveMaxContentWidth),
-              child: Form(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: context.responsivePadding,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: context.responsiveMaxContentWidth),
+                child: Form(
                 key: _formKey,
                 child: Column(
                   children: [
@@ -210,6 +224,13 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
                     SizedBox(height: context.responsiveSectionSpacing),
 
+                    // Loading indicator from profile controller
+                    if (profileState.isUpdating)
+                      Animate(
+                        effects: [FadeEffect(duration: 300.ms)],
+                        child: const LinearProgressIndicator(),
+                      ),
+
                     // Save button
                     Animate(
                       effects: [
@@ -220,7 +241,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                         label: 'Guardar Cambios',
                         icon: Icons.save_rounded,
                         style: NeonButtonStyle.primary,
-                        isLoading: _isLoading,
+                        isLoading: _isLoading || profileState.isUpdating,
                         isFullWidth: true,
                         onPressed: _handleSave,
                       ),
@@ -251,6 +272,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
           ),
         ),
       ),
+      ),
     );
   }
 
@@ -261,10 +283,15 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     final cameraButtonSize = avatarRadius * 0.64; // proportional to avatar
     final cameraIconSize = cameraButtonSize * 0.5;
 
+    String initials = 'K';
+    if (_currentProfile != null) {
+      initials = _currentProfile!.username.substring(0, 1).toUpperCase();
+    }
+
     return Stack(
       children: [
         NeonAvatar(
-          initials: 'K',
+          initials: initials,
           radius: avatarRadius,
           glowColor: primaryColor,
         ),

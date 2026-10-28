@@ -1,13 +1,21 @@
 // Auth wrapper for KrakenDraw - handles auth state routing
+import 'dart:convert';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/theme/neon_colors.dart';
-import 'package:mobile/core/theme/app_theme.dart';
+import 'package:mobile/core/theme/neon_colors.dart'
+    show NeonColors;
 import 'package:mobile/core/network/api_client.dart';
+import 'package:mobile/core/network/services/auth_service.dart';
 import 'package:mobile/core/storage/secure_storage.dart';
+import 'package:mobile/data/models/auth_models.dart';
+import 'package:mobile/data/models/profile_models.dart';
 import 'package:mobile/presentation/auth/login/login_page.dart';
-import 'package:mobile/presentation/dashboard/dashboard_page.dart';
+import 'package:mobile/main.dart' show navigatorKey;
+import 'package:mobile/presentation/dashboard/dashboard_page.dart'
+    show DashboardPage;
 import 'package:mobile/presentation/shared/widgets/neon_background.dart';
 import 'package:mobile/presentation/shared/widgets/skeleton_base.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -25,23 +33,23 @@ enum AuthStatus {
 /// Auth state
 class AuthState {
   final AuthStatus status;
-  final String? userData;
+  final Perfil? user;
   final String? errorMessage;
 
   const AuthState({
     this.status = AuthStatus.unknown,
-    this.userData,
+    this.user,
     this.errorMessage,
   });
 
   AuthState copyWith({
     AuthStatus? status,
-    String? userData,
+    Perfil? user,
     String? errorMessage,
   }) {
     return AuthState(
       status: status ?? this.status,
-      userData: userData ?? this.userData,
+      user: user ?? this.user,
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
@@ -51,59 +59,86 @@ class AuthState {
 }
 
 /// Auth controller provider
-final authControllerProvider = StateNotifierProvider<AuthController, AuthState>((ref) {
+final authControllerProvider =
+    StateNotifierProvider<AuthController, AuthState>((ref) {
   return AuthController();
 });
 
 /// Auth controller managing authentication state
 class AuthController extends StateNotifier<AuthState> {
+  final AuthService _authService = AuthService();
+
   AuthController() : super(const AuthState()) {
     initialize();
   }
 
   Future<void> initialize() async {
     // Check for stored session
-    // final token = await SecureStorage.getUserToken();
-    // final userData = await SecureStorage.getUserData();
-    //
-    // if (token != null && userData != null) {
-    //   state = state.copyWith(status: AuthStatus.authenticated, userData: userData);
-    // } else {
-    //   state = state.copyWith(status: AuthStatus.unauthenticated);
-    // }
+    final token = await SecureStorage.getUserToken();
+    final userDataJson = await SecureStorage.getUserData();
 
-    // For now, simulate unauthenticated state
-    await Future.delayed(const Duration(milliseconds: 500));
-    state = state.copyWith(status: AuthStatus.unauthenticated);
+    if (token != null && userDataJson != null) {
+      // Restore token to Dio headers for subsequent requests
+      ApiClient.instance.setAuthToken(token);
+
+      try {
+        // Try to validate session with /auth/me
+        final response = await _authService.me();
+        final authResponse = AuthResponse.fromJson(response);
+        await SecureStorage.saveUserToken(authResponse.token);
+        await SecureStorage.saveUserData(jsonEncode(authResponse.usuario.toJson()));
+        // Update Dio headers with fresh token
+        ApiClient.instance.setAuthToken(authResponse.token);
+        state = state.copyWith(
+          status: AuthStatus.authenticated,
+          user: authResponse.usuario,
+        );
+        // Load profile after successful auth restoration
+        _loadProfile();
+      } catch (e) {
+        // Session invalid, clear storage
+        await SecureStorage.clearAuthData();
+        await ApiClient.instance.clearCookies();
+        ApiClient.instance.clearAuthToken();
+        state = state.copyWith(status: AuthStatus.unauthenticated);
+      }
+    } else {
+      state = state.copyWith(status: AuthStatus.unauthenticated);
+    }
+  }
+
+  void _loadProfile() {
+    // Trigger profile loading after auth is established
+    // This will be handled by the profile page when it's shown
   }
 
   Future<void> login(String email, String password, bool rememberMe) async {
     state = state.copyWith(status: AuthStatus.authenticating);
 
     try {
-      // TODO: Implement actual API call
-      // final response = await ApiClient.instance.dio.post(ApiEndpoints.authLogin, data: {
-      //   'email': email,
-      //   'password': password,
-      // });
-      //
-      // if (response.statusCode == 200) {
-      //   final userData = response.data['usuario'];
-      //   final token = response.data['token'];
-      //
-      //   await SecureStorage.saveUserToken(token);
-      //   await SecureStorage.saveUserData(jsonEncode(userData));
-      //
-      //   state = state.copyWith(status: AuthStatus.authenticated, userData: jsonEncode(userData));
-      // } else {
-      //   throw Exception(response.data['message'] ?? 'Error de autenticación');
-      // }
+      final response = await _authService.login(email: email, password: password);
+      final authResponse = AuthResponse.fromJson(response);
 
-      // Simulate success for now
-      await Future.delayed(const Duration(milliseconds: 800));
+      // Save token and user data
+      await SecureStorage.saveUserToken(authResponse.token);
+      await SecureStorage.saveUserData(jsonEncode(authResponse.usuario.toJson()));
+      // Set token in Dio headers for subsequent requests
+      ApiClient.instance.setAuthToken(authResponse.token);
+
       state = state.copyWith(
         status: AuthStatus.authenticated,
-        userData: '{"username": "demo", "email": "demo@krakendraw.com"}',
+        user: authResponse.usuario,
+      );
+    } on DioException catch (e) {
+      String message = 'Error de autenticación';
+      if (e.response?.data != null) {
+        message = e.response?.data['message'] ?? message;
+      } else if (e.message != null) {
+        message = e.message!;
+      }
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: message,
       );
     } catch (e) {
       state = state.copyWith(
@@ -117,30 +152,33 @@ class AuthController extends StateNotifier<AuthState> {
     state = state.copyWith(status: AuthStatus.authenticating);
 
     try {
-      // TODO: Implement actual API call
-      // final response = await ApiClient.instance.dio.post(ApiEndpoints.authRegister, data: {
-      //   'username': username,
-      //   'email': email,
-      //   'password': password,
-      // });
-      //
-      // if (response.statusCode == 200) {
-      //   final userData = response.data['usuario'];
-      //   final token = response.data['token'];
-      //
-      //   await SecureStorage.saveUserToken(token);
-      //   await SecureStorage.saveUserData(jsonEncode(userData));
-      //
-      //   state = state.copyWith(status: AuthStatus.authenticated, userData: jsonEncode(userData));
-      // } else {
-      //   throw Exception(response.data['message'] ?? 'Error de registro');
-      // }
+      final response = await _authService.register(
+        username: username,
+        email: email,
+        password: password,
+      );
+      final authResponse = AuthResponse.fromJson(response);
 
-      // Simulate success for now
-      await Future.delayed(const Duration(milliseconds: 800));
+      // Save token and user data
+      await SecureStorage.saveUserToken(authResponse.token);
+      await SecureStorage.saveUserData(jsonEncode(authResponse.usuario.toJson()));
+      // Set token in Dio headers for subsequent requests
+      ApiClient.instance.setAuthToken(authResponse.token);
+
       state = state.copyWith(
         status: AuthStatus.authenticated,
-        userData: '{"username": "$username", "email": "$email"}',
+        user: authResponse.usuario,
+      );
+    } on DioException catch (e) {
+      String message = 'Error de registro';
+      if (e.response?.data != null) {
+        message = e.response?.data['message'] ?? message;
+      } else if (e.message != null) {
+        message = e.message!;
+      }
+      state = state.copyWith(
+        status: AuthStatus.error,
+        errorMessage: message,
       );
     } catch (e) {
       state = state.copyWith(
@@ -152,14 +190,16 @@ class AuthController extends StateNotifier<AuthState> {
 
   Future<void> logout() async {
     try {
-      // TODO: Implement actual API call
-      // await ApiClient.instance.dio.post(ApiEndpoints.authLogout);
+      await _authService.logout();
       await SecureStorage.clearAuthData();
       await ApiClient.instance.clearCookies();
+      ApiClient.instance.clearAuthToken();
     } catch (_) {
-      // Ignore errors
+      // Ignore errors, still clear local state
     } finally {
-      state = state.copyWith(status: AuthStatus.unauthenticated);
+      state = state.copyWith(status: AuthStatus.unauthenticated, user: null);
+      // Navigate to login using global navigator key
+      navigatorKey.currentContext?.go('/auth/login');
     }
   }
 

@@ -8,6 +8,7 @@ import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/shared/widgets/neon_background.dart';
 import 'package:mobile/presentation/shared/widgets/neon_button.dart';
 import 'package:mobile/presentation/shared/widgets/neon_input.dart';
+import 'package:mobile/presentation/auth/auth_wrapper.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// Register page with username, email, password, confirm password
@@ -55,21 +56,31 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       _errorMessage = null;
     });
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      await ref.read(authControllerProvider.notifier).register(
+        _usernameController.text.trim(),
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
 
-    // TODO: Replace with actual API call
-    // final result = await ref.read(authControllerProvider.notifier).register(
-    //   _usernameController.text.trim(),
-    //   _emailController.text.trim(),
-    //   _passwordController.text,
-    // );
+      if (mounted) {
+        setState(() => _isLoading = false);
 
-    if (mounted) {
-      setState(() => _isLoading = false);
-
-      // Navigate to dashboard on success (auto-login after register)
-      context.go('/dashboard');
+        // Navigate to dashboard on success (auto-login after register)
+        final authState = ref.read(authControllerProvider);
+        if (authState.isAuthenticated) {
+          context.go('/dashboard');
+        } else if (authState.errorMessage != null) {
+          setState(() => _errorMessage = authState.errorMessage);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = e.toString();
+        });
+      }
     }
   }
 

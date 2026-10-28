@@ -8,6 +8,7 @@ import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/shared/widgets/neon_background.dart';
 import 'package:mobile/presentation/shared/widgets/neon_button.dart';
 import 'package:mobile/presentation/shared/widgets/neon_input.dart';
+import 'package:mobile/presentation/auth/auth_wrapper.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// Login page with email/username and password
@@ -46,21 +47,31 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       _errorMessage = null;
     });
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      await ref.read(authControllerProvider.notifier).login(
+        _emailController.text.trim(),
+        _passwordController.text,
+        _rememberMe,
+      );
 
-    // TODO: Replace with actual API call
-    // final result = await ref.read(authControllerProvider.notifier).login(
-    //   _emailController.text.trim(),
-    //   _passwordController.text,
-    //   _rememberMe,
-    // );
+      if (mounted) {
+        setState(() => _isLoading = false);
 
-    if (mounted) {
-      setState(() => _isLoading = false);
-
-      // Navigate to dashboard on success
-      context.go('/dashboard');
+        // Navigate to dashboard on success
+        final authState = ref.read(authControllerProvider);
+        if (authState.isAuthenticated) {
+          context.go('/dashboard');
+        } else if (authState.errorMessage != null) {
+          setState(() => _errorMessage = authState.errorMessage);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = e.toString();
+        });
+      }
     }
   }
 

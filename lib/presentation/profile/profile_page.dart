@@ -11,60 +11,10 @@ import 'package:mobile/presentation/shared/widgets/neon_button.dart';
 import 'package:mobile/presentation/shared/widgets/neon_card.dart';
 import 'package:mobile/presentation/shared/widgets/neon_input.dart';
 import 'package:mobile/presentation/profile/skeleton/profile_skeleton.dart';
-
-// Provider for profile data
-final profileProvider = FutureProvider<ProfileData>((ref) async {
-  // TODO: Fetch from API
-  // final response = await ApiClient.instance.dio.get(ApiEndpoints.perfil);
-  // return ProfileData.fromJson(response.data);
-  await Future.delayed(const Duration(milliseconds: 500));
-  return ProfileData(
-    username: 'krakendev',
-    email: 'fernando@krakendraw.com',
-    avatarUrl: null,
-    role: 'Cliente',
-    plan: 'Premium',
-    generationsToday: 12,
-    generationsTotal: 1243,
-    memberSince: DateTime.now().subtract(const Duration(days: 180)),
-  );
-});
-
-/// Profile data model
-class ProfileData {
-  final String username;
-  final String email;
-  final String? avatarUrl;
-  final String role;
-  final String plan;
-  final int generationsToday;
-  final int generationsTotal;
-  final DateTime memberSince;
-
-  const ProfileData({
-    required this.username,
-    required this.email,
-    this.avatarUrl,
-    required this.role,
-    required this.plan,
-    required this.generationsToday,
-    required this.generationsTotal,
-    required this.memberSince,
-  });
-
-  // factory ProfileData.fromJson(Map<String, dynamic> json) {
-  //   return ProfileData(
-  //     username: json['username'] ?? '',
-  //     email: json['email'] ?? '',
-  //     avatarUrl: json['profile_icon'],
-  //     role: json['rol']?['nombre'] ?? 'Cliente',
-  //     plan: json['plan']?['nombre'] ?? 'Gratis',
-  //     generationsToday: json['generaciones_hoy'] ?? 0,
-  //     generationsTotal: json['generaciones_total'] ?? 0,
-  //     memberSince: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
-  //   );
-  // }
-}
+import 'package:mobile/presentation/profile/profile_controller.dart';
+import 'package:mobile/presentation/auth/auth_wrapper.dart';
+import 'package:mobile/data/models/profile_models.dart';
+import 'package:intl/intl.dart';
 
 /// Profile page with avatar, info, and actions
 class ProfilePage extends ConsumerStatefulWidget {
@@ -75,7 +25,14 @@ class ProfilePage extends ConsumerStatefulWidget {
 }
 
 class _ProfilePageState extends ConsumerState<ProfilePage> {
-  bool _isEditing = false;
+  @override
+  void initState() {
+    super.initState();
+    // Load profile when page is first shown
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(profileControllerProvider.notifier).loadProfile();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,16 +58,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         child: SafeArea(
           child: RefreshIndicator(
             onRefresh: () async {
-              ref.invalidate(profileProvider);
+              await ref.read(profileControllerProvider.notifier).loadProfile();
             },
             child: Consumer(
               builder: (context, ref, _) {
-                final profileAsync = ref.watch(profileProvider);
+                final profileState = ref.watch(profileControllerProvider);
 
-                return profileAsync.when(
-                  data: (profile) => _buildProfileContent(context, profile),
+                return profileState.profile.when(
+                  data: (perfil) => _buildProfileContent(context, perfil, ref),
                   loading: () => const ProfileSkeleton(),
-                  error: (error, _) => _buildErrorState(context, error.toString()),
+                  error: (error, _) =>
+                      _buildErrorState(context, error.toString(), ref),
                 );
               },
             ),
@@ -120,7 +78,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
-  Widget _buildProfileContent(BuildContext context, ProfileData profile) {
+  Widget _buildProfileContent(
+      BuildContext context, Perfil perfil, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? NeonColors.cyanDark : NeonColors.cyanLight;
@@ -133,9 +92,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           Animate(
             effects: [
               FadeEffect(duration: 400.ms),
-              SlideEffect(begin: const Offset(0, -0.2), end: Offset.zero, duration: 400.ms),
+              SlideEffect(
+                  begin: const Offset(0, -0.2),
+                  end: Offset.zero,
+                  duration: 400.ms),
             ],
-            child: _buildAvatarSection(context, profile),
+            child: _buildAvatarSection(context, perfil),
           ),
 
           const SizedBox(height: 24),
@@ -144,9 +106,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           Animate(
             effects: [
               FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 100)),
-              SlideEffect(begin: const Offset(0, 0.2), end: Offset.zero, duration: 400.ms, delay: Duration(milliseconds: 100)),
+              SlideEffect(
+                  begin: const Offset(0, 0.2),
+                  end: Offset.zero,
+                  duration: 400.ms,
+                  delay: Duration(milliseconds: 100)),
             ],
-            child: _buildStatsRow(context, profile),
+            child: _buildStatsRow(context, perfil),
           ),
 
           const SizedBox(height: 24),
@@ -155,7 +121,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           Animate(
             effects: [
               FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 200)),
-              SlideEffect(begin: const Offset(0, 0.2), end: Offset.zero, duration: 400.ms, delay: Duration(milliseconds: 200)),
+              SlideEffect(
+                  begin: const Offset(0, 0.2),
+                  end: Offset.zero,
+                  duration: 400.ms,
+                  delay: Duration(milliseconds: 200)),
             ],
             child: _buildActionButtons(context),
           ),
@@ -166,20 +136,26 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           Animate(
             effects: [
               FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 300)),
-              SlideEffect(begin: const Offset(0, 0.2), end: Offset.zero, duration: 400.ms, delay: Duration(milliseconds: 300)),
+              SlideEffect(
+                  begin: const Offset(0, 0.2),
+                  end: Offset.zero,
+                  duration: 400.ms,
+                  delay: Duration(milliseconds: 300)),
             ],
             child: _buildInfoSection(
               context,
               'Información de la Cuenta',
               Icons.info_outline_rounded,
               [
-                _InfoRow('Usuario', profile.username),
-                _InfoRow('Email', profile.email),
-                _InfoRow('Rol', profile.role),
-                _InfoRow('Plan', profile.plan, valueColor: primaryColor),
+                _InfoRow('Usuario', perfil.username),
+                _InfoRow('Email', perfil.email),
+                _InfoRow('Rol', perfil.primaryRoleName),
+                _InfoRow('Plan', perfil.planName, valueColor: primaryColor),
                 _InfoRow(
                   'Miembro desde',
-                  '${profile.memberSince.day}/${profile.memberSince.month}/${profile.memberSince.year}',
+                  perfil.createdAt != null
+                      ? DateFormat('dd/MM/yyyy').format(perfil.createdAt!)
+                      : 'Desconocido',
                 ),
               ],
             ),
@@ -190,15 +166,19 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           Animate(
             effects: [
               FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 400)),
-              SlideEffect(begin: const Offset(0, 0.2), end: Offset.zero, duration: 400.ms, delay: Duration(milliseconds: 400)),
+              SlideEffect(
+                  begin: const Offset(0, 0.2),
+                  end: Offset.zero,
+                  duration: 400.ms,
+                  delay: Duration(milliseconds: 400)),
             ],
             child: _buildInfoSection(
               context,
               'Estadísticas',
               Icons.analytics_outlined,
               [
-                _InfoRow('Generaciones hoy', '${profile.generationsToday}'),
-                _InfoRow('Generaciones totales', '${profile.generationsTotal}'),
+                _InfoRow('Generaciones hoy', '${perfil.generacionesHoy}'),
+                _InfoRow('Generaciones totales', '${perfil.generacionesTotal}'),
               ],
             ),
           ),
@@ -208,7 +188,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           Animate(
             effects: [
               FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 500)),
-              SlideEffect(begin: const Offset(0, 0.2), end: Offset.zero, duration: 400.ms, delay: Duration(milliseconds: 500)),
+              SlideEffect(
+                  begin: const Offset(0, 0.2),
+                  end: Offset.zero,
+                  duration: 400.ms,
+                  delay: Duration(milliseconds: 500)),
             ],
             child: _buildInfoSection(
               context,
@@ -240,14 +224,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           Animate(
             effects: [
               FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 600)),
-              SlideEffect(begin: const Offset(0, 0.2), end: Offset.zero, duration: 400.ms, delay: Duration(milliseconds: 600)),
+              SlideEffect(
+                  begin: const Offset(0, 0.2),
+                  end: Offset.zero,
+                  duration: 400.ms,
+                  delay: Duration(milliseconds: 600)),
             ],
             child: NeonButton(
               label: 'Cerrar Sesión',
               icon: Icons.logout_rounded,
               style: NeonButtonStyle.danger,
               isFullWidth: true,
-              onPressed: () => _showLogoutDialog(context),
+              onPressed: () => _showLogoutDialog(context, ref),
             ),
           ),
 
@@ -257,7 +245,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
-  Widget _buildAvatarSection(BuildContext context, ProfileData profile) {
+  Widget _buildAvatarSection(BuildContext context, Perfil perfil) {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? NeonColors.cyanDark : NeonColors.cyanLight;
@@ -271,8 +259,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           Stack(
             children: [
               NeonAvatar(
-                imageUrl: profile.avatarUrl,
-                initials: profile.username.substring(0, 1).toUpperCase(),
+                imageUrl: perfil.profileIcon,
+                initials: perfil.username.substring(0, 1).toUpperCase(),
                 radius: 50,
                 glowColor: primaryColor,
               ),
@@ -306,7 +294,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           const SizedBox(height: 16),
           // Username
           Text(
-            profile.username,
+            perfil.username,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   color: colorScheme.onSurface,
                   fontWeight: FontWeight.w700,
@@ -315,7 +303,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           const SizedBox(height: 4),
           // Email
           Text(
-            profile.email,
+            perfil.email,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
@@ -326,14 +314,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               NeonBadge(
-                label: profile.role,
+                label: perfil.primaryRoleName,
                 icon: Icons.badge_rounded,
                 color: colorScheme.primary,
                 style: NeonBadgeStyle.soft,
               ),
               const SizedBox(width: 8),
               NeonBadge(
-                label: profile.plan,
+                label: perfil.planName,
                 icon: Icons.star_rounded,
                 color: NeonColors.getNeon('orange', isDark),
                 style: NeonBadgeStyle.filled,
@@ -346,7 +334,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
-  Widget _buildStatsRow(BuildContext context, ProfileData profile) {
+  Widget _buildStatsRow(BuildContext context, Perfil perfil) {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -356,7 +344,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           child: _buildStatCard(
             context,
             'Hoy',
-            '${profile.generationsToday}',
+            perfil.generacionesHoy.toString(),
             Icons.today_rounded,
             'cyan',
           ),
@@ -366,7 +354,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           child: _buildStatCard(
             context,
             'Total',
-            '${profile.generationsTotal}',
+            perfil.generacionesTotal.toString(),
             Icons.insights_rounded,
             'magenta',
           ),
@@ -376,7 +364,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           child: _buildStatCard(
             context,
             'Días activo',
-            '${DateTime.now().difference(profile.memberSince).inDays}',
+            perfil.createdAt != null
+                ? '${DateTime.now().difference(perfil.createdAt!).inDays}'
+                : '0',
             Icons.calendar_today_rounded,
             'green',
           ),
@@ -497,38 +487,39 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           ),
           const SizedBox(height: 16),
           ...rows.map((row) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 120,
-                  child: Text(
-                    row.label,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurface.withValues(alpha: 0.5),
-                        ),
-                  ),
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 120,
+                      child: Text(
+                        row.label,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurface.withValues(alpha: 0.5),
+                            ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        row.value,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: row.valueColor ?? colorScheme.onSurface,
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    row.value,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: row.valueColor ?? colorScheme.onSurface,
-                          fontWeight: FontWeight.w500,
-                        ),
-                  ),
-                ),
-              ],
-            ),
-          )),
+              )),
         ],
       ),
     );
   }
 
-  Widget _buildErrorState(BuildContext context, String error) {
+  Widget _buildErrorState(
+      BuildContext context, String error, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Center(
@@ -559,7 +550,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               label: 'Reintentar',
               icon: Icons.refresh_rounded,
               style: NeonButtonStyle.primary,
-              onPressed: () => ref.invalidate(profileProvider),
+              onPressed: () =>
+                  ref.read(profileControllerProvider.notifier).loadProfile(),
             ),
           ],
         ),
@@ -567,7 +559,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
+  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
 
     showDialog(
@@ -589,11 +581,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             style: NeonButtonStyle.danger,
             onPressed: () async {
               Navigator.pop(context);
-              // TODO: Call logout API and clear storage
-              // await ref.read(authControllerProvider.notifier).logout();
-              if (context.mounted) {
-                context.go('/auth/login');
-              }
+              await ref.read(authControllerProvider.notifier).logout();
+              // AuthWrapper will automatically redirect to LoginPage
             },
           ),
         ],

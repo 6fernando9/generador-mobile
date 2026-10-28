@@ -5,10 +5,12 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/theme/neon_colors.dart';
 import 'package:mobile/core/utils/responsive.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:google_fonts/google_fonts.dart'
+    show GoogleFonts;
 import 'package:mobile/presentation/shared/widgets/neon_background.dart';
 import 'package:mobile/presentation/shared/widgets/neon_button.dart';
 import 'package:mobile/presentation/shared/widgets/neon_input.dart';
+import 'package:mobile/presentation/profile/profile_controller.dart';
 
 /// Change password page
 class ChangePasswordPage extends ConsumerStatefulWidget {
@@ -52,33 +54,32 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
       _errorMessage = null;
     });
 
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
-
-    // TODO: Replace with actual API call
-    // await ref.read(profileControllerProvider.notifier).changePassword(
-    //   _currentPasswordController.text,
-    //   _newPasswordController.text,
-    // );
+    final success = await ref.read(profileControllerProvider.notifier).changePassword(
+          currentPassword: _currentPasswordController.text,
+          newPassword: _newPasswordController.text,
+        );
 
     if (mounted) {
       setState(() => _isLoading = false);
-      context.pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Contraseña cambiada correctamente',
-            style: GoogleFonts.inter(),
+      if (success) {
+        context.pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Contraseña cambiada correctamente',
+              style: GoogleFonts.inter(),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
           ),
-          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-        ),
-      );
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final profileState = ref.watch(profileControllerProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -89,11 +90,12 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
         showParticles: false,
         animationDuration: const Duration(seconds: 8),
         child: SafeArea(
-          child: SingleChildScrollView(
-            padding: context.responsivePadding,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: context.responsiveMaxContentWidth),
-              child: Form(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: context.responsivePadding,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: context.responsiveMaxContentWidth),
+                child: Form(
                 key: _formKey,
                 child: Column(
                   children: [
@@ -258,6 +260,13 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
 
                     SizedBox(height: context.responsiveFieldSpacing),
 
+                    // Loading indicator from profile controller
+                    if (profileState.isUpdating)
+                      Animate(
+                        effects: [FadeEffect(duration: 300.ms)],
+                        child: const LinearProgressIndicator(),
+                      ),
+
                     // Password requirements hint
                     Animate(
                       effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 600))],
@@ -276,7 +285,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                         label: 'Cambiar Contraseña',
                         icon: Icons.lock_rounded,
                         style: NeonButtonStyle.primary,
-                        isLoading: _isLoading,
+                        isLoading: _isLoading || profileState.isUpdating,
                         isFullWidth: true,
                         onPressed: _handleChangePassword,
                       ),
@@ -306,6 +315,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

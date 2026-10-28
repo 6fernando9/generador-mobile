@@ -10,7 +10,8 @@ import 'presentation/splash/splash_page.dart';
 import 'presentation/auth/login/login_page.dart';
 import 'presentation/auth/register/register_page.dart';
 import 'presentation/auth/auth_wrapper.dart';
-import 'presentation/dashboard/dashboard_page.dart';
+import 'presentation/dashboard/dashboard_page.dart'
+    show DashboardPage;
 import 'presentation/profile/profile_page.dart';
 import 'presentation/profile/edit_profile_page.dart';
 import 'presentation/profile/change_password_page.dart';
@@ -82,7 +83,7 @@ final GoRouter _router = GoRouter(
     ),
   ],
   redirect: (context, state) {
-    // Add auth redirect logic here when AuthController is implemented
+    // Auth redirect handled by AuthController via navigatorKey
     return null;
   },
 );
@@ -201,6 +202,12 @@ final appInitializationProvider = FutureProvider<void>((ref) async {
 /// Main entry point
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize SecureStorage
+  await SecureStorage.init();
+
+  // Initialize API client
+  await ApiClient.init();
 
   // Initialize Google Fonts
   await GoogleFonts.pendingFonts([
