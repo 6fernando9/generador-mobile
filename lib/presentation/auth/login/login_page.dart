@@ -204,42 +204,38 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         runSpacing: 8,
                         children: [
                           // Remember me checkbox
-                          Flexible(
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Checkbox(
-                                  value: _rememberMe,
-                                  onChanged: (value) => setState(
-                                    () => _rememberMe = value ?? true,
-                                  ),
-                                  activeColor: colorScheme.primary,
-                                  checkColor: colorScheme.onPrimary,
-                                  side: BorderSide(
-                                    color: colorScheme.outlineVariant,
-                                    width: 1.5,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  materialTapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Checkbox(
+                                value: _rememberMe,
+                                onChanged: (value) => setState(
+                                  () => _rememberMe = value ?? true,
                                 ),
-                                const SizedBox(width: 8),
-                                Flexible(
-                                  child: Text(
-                                    'Recordarme',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 13,
-                                      color: colorScheme.onSurface.withValues(
-                                        alpha: 0.7,
-                                      ),
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
+                                activeColor: colorScheme.primary,
+                                checkColor: colorScheme.onPrimary,
+                                side: BorderSide(
+                                  color: colorScheme.outlineVariant,
+                                  width: 1.5,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Recordarme',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  color: colorScheme.onSurface.withValues(
+                                    alpha: 0.7,
                                   ),
                                 ),
-                              ],
-                            ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
                           // Forgot password
                           TextButton(

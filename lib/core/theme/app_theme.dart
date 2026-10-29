@@ -421,7 +421,8 @@ class AppTheme {
         ? scheme.onBackground
         : scheme.onBackground;
 
-    return GoogleFonts.interTextTheme().copyWith(
+    // Build TextTheme manually to avoid material_ui package type conflict
+    return TextTheme(
       displayLarge: GoogleFonts.orbitron(
         fontSize: 57,
         fontWeight: FontWeight.w700,

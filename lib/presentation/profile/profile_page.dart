@@ -352,75 +352,31 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 600;
 
-    if (isSmallScreen) {
-      // Small screens: vertical stack
-      return Column(
-        children: [
-          _buildStatCard(
+    // Always show 2 cards side by side (Hoy and Total)
+    // On small screens, use a Row with Expanded for better proportions
+    return Row(
+      children: [
+        Expanded(
+          child: _buildStatCard(
             context,
             'Hoy',
             perfil.generacionesHoy.toString(),
             Icons.today_rounded,
             'cyan',
           ),
-          const SizedBox(height: 12),
-          _buildStatCard(
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildStatCard(
             context,
             'Total',
             perfil.generacionesTotal.toString(),
             Icons.insights_rounded,
             'magenta',
           ),
-          const SizedBox(height: 12),
-          _buildStatCard(
-            context,
-            'Días activo',
-            perfil.createdAt != null
-                ? '${DateTime.now().difference(perfil.createdAt!).inDays}'
-                : '0',
-            Icons.calendar_today_rounded,
-            'green',
-          ),
-        ],
-      );
-    } else {
-      // Large screens: horizontal row
-      return Row(
-        children: [
-          Expanded(
-            child: _buildStatCard(
-              context,
-              'Hoy',
-              perfil.generacionesHoy.toString(),
-              Icons.today_rounded,
-              'cyan',
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _buildStatCard(
-              context,
-              'Total',
-              perfil.generacionesTotal.toString(),
-              Icons.insights_rounded,
-              'magenta',
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _buildStatCard(
-              context,
-              'Días activo',
-              perfil.createdAt != null
-                  ? '${DateTime.now().difference(perfil.createdAt!).inDays}'
-                  : '0',
-              Icons.calendar_today_rounded,
-              'green',
-            ),
-          ),
-        ],
-      );
-    }
+        ),
+      ],
+    );
   }
 
   Widget _buildStatCard(

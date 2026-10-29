@@ -15,7 +15,7 @@ class SecureStorageKeys {
 class SecureStorage {
   static const FlutterSecureStorage _storage = FlutterSecureStorage(
     aOptions: AndroidOptions(
-      encryptedSharedPreferences: true,
+      // encryptedSharedPreferences removed in v11+
     ),
     iOptions: IOSOptions(
       accessibility: KeychainAccessibility.first_unlock_this_device,

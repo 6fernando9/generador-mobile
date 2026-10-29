@@ -37,12 +37,13 @@ class ProfileState {
   }
 }
 
-/// Profile controller managing profile operations
-class ProfileController extends StateNotifier<ProfileState> {
+/// Profile controller managing profile operations (Riverpod 3.x - Notifier)
+class ProfileController extends Notifier<ProfileState> {
   final UsuarioService _usuarioService = UsuarioService();
 
-  ProfileController() : super(const ProfileState()) {
-    // Don't auto-load - wait for explicit loadProfile() call after authentication
+  @override
+  ProfileState build() {
+    return const ProfileState();
   }
 
   /// Load user profile from API
@@ -723,8 +724,7 @@ class _CameraPreviewDialog extends StatelessWidget {
   }
 }
 
-/// Profile controller provider
-final profileControllerProvider =
-    StateNotifierProvider<ProfileController, ProfileState>((ref) {
-  return ProfileController();
-});
+/// Profile controller provider (Riverpod 3.x - NotifierProvider)
+final profileControllerProvider = NotifierProvider<ProfileController, ProfileState>(
+  () => ProfileController(),
+);

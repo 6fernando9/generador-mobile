@@ -58,21 +58,21 @@ class AuthState {
   bool get isLoading => status == AuthStatus.authenticating || status == AuthStatus.unknown;
 }
 
-/// Auth controller provider
-final authControllerProvider =
-    StateNotifierProvider<AuthController, AuthState>((ref) {
-  return AuthController();
-});
+/// Auth controller provider (Riverpod 3.x - NotifierProvider)
+final authControllerProvider = NotifierProvider<AuthController, AuthState>(() => AuthController());
 
-/// Auth controller managing authentication state
-class AuthController extends StateNotifier<AuthState> {
+/// Auth controller managing authentication state (Riverpod 3.x - Notifier)
+class AuthController extends Notifier<AuthState> {
   final AuthService _authService = AuthService();
 
-  AuthController() : super(const AuthState()) {
-    initialize();
+  @override
+  AuthState build() {
+    // Initialize auth state asynchronously
+    _initialize();
+    return const AuthState();
   }
 
-  Future<void> initialize() async {
+  Future<void> _initialize() async {
     // Check for stored session
     final token = await SecureStorage.getUserToken();
     final userDataJson = await SecureStorage.getUserData();

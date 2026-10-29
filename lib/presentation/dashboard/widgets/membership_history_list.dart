@@ -107,12 +107,20 @@ class MembershipHistoryList extends ConsumerWidget {
         if (response.items.isEmpty) {
           return _buildEmptyState(context);
         }
-        return ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: response.items.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (_, index) => _buildMembershipItem(context, response.items[index]),
+        // Calculate height based on number of items to avoid infinite constraints
+        // Each item is approximately 140px + 12px separator
+        const itemHeight = 140.0;
+        const separatorHeight = 12.0;
+        final totalHeight = (itemHeight * response.items.length) + (separatorHeight * (response.items.length - 1));
+
+        return SizedBox(
+          height: totalHeight,
+          child: ListView.separated(
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: response.items.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (_, index) => _buildMembershipItem(context, response.items[index]),
+          ),
         );
       },
       loading: () => const MembershipCardSkeleton(),

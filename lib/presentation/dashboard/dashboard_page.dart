@@ -3,13 +3,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:mobile/core/theme/neon_colors.dart';
+import 'package:mobile/core/utils/responsive.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/presentation/shared/widgets/neon_background.dart';
 import 'package:mobile/presentation/shared/widgets/neon_button.dart';
-import 'package:mobile/presentation/shared/widgets/neon_card.dart';
+import 'package:mobile/presentation/shared/widgets/neon_card.dart'
+    show GlowCard, NeonMetricCard, NeonBadge, NeonBadgeStyle;
+import 'package:mobile/presentation/shared/widgets/skeleton_base.dart'
+    show SkeletonBase, SkeletonBox, SkeletonText;
 import 'package:mobile/presentation/shared/theme/theme_switcher.dart';
 import 'package:mobile/presentation/dashboard/widgets/download_history_list.dart';
 import 'package:mobile/presentation/dashboard/widgets/membership_history_list.dart';
+import 'package:mobile/presentation/dashboard/widgets/date_range_selector.dart';
+import 'package:mobile/presentation/dashboard/widgets/kpi_card_row.dart';
+import 'package:mobile/presentation/dashboard/widgets/charts/neon_line_chart.dart';
+import 'package:mobile/presentation/dashboard/widgets/charts/neon_donut_chart.dart';
+import 'package:mobile/presentation/dashboard/widgets/charts/neon_heatmap.dart';
+import 'package:mobile/presentation/dashboard/widgets/project_ranking_list.dart';
+import 'package:mobile/presentation/dashboard/dashboard_providers.dart';
 import 'package:mobile/main.dart' show AppBottomNavBar;
 
 /// Dashboard page with tabs for Overview, History, and Memberships
@@ -104,97 +115,147 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Watch providers
+    final resumenAsync = ref.watch(dashboardResumenAutoProvider);
+    final tendenciaAsync = ref.watch(dashboardTendenciaAutoProvider);
+    final tecnologiasAsync = ref.watch(dashboardTecnologiasProvider);
+    final actividadAsync = ref.watch(dashboardActividadAutoProvider);
+    final proyectosAsync = ref.watch(dashboardProyectosProvider);
+
     return RefreshIndicator(
       onRefresh: () async {
-        await Future.delayed(const Duration(seconds: 1));
-        // TODO: Refresh dashboard data
+        ref.invalidate(dashboardResumenAutoProvider);
+        ref.invalidate(dashboardTendenciaAutoProvider);
+        ref.invalidate(dashboardTecnologiasProvider);
+        ref.invalidate(dashboardActividadAutoProvider);
+        ref.invalidate(dashboardProyectosProvider);
+        await Future.delayed(const Duration(milliseconds: 500));
       },
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           const SizedBox(height: 8),
 
-          // Stats section
+          // Date Range Selector
           Animate(
             effects: [FadeEffect(duration: 400.ms)],
-            child: Text(
-              'Estadísticas del Cliente',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
+            child: DateRangeSelector(showLabel: true),
           ),
 
           const SizedBox(height: 16),
 
-          // Metrics cards grid
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 1.1,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
+          // KPI Cards Row
+          Animate(
+            effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 100))],
+            child: resumenAsync.when(
+              data: (resumen) => KpiCardRow(resumen: resumen),
+              loading: () => KpiCardRow(isLoading: true),
+              error: (e, _) => KpiCardRow(error: e.toString()),
             ),
-            itemCount: 4,
-            itemBuilder: (context, index) {
-              return Animate(
-                effects: [
-                  FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 100 * index)),
-                  SlideEffect(begin: const Offset(0, 0.3), end: Offset.zero, duration: 400.ms),
-                ],
-                child: NeonMetricCard(
-                  title: _getMetricTitle(index),
-                  value: _getMetricValue(index),
-                  subtitle: _getMetricSubtitle(index),
-                  icon: _getMetricIcon(index),
-                  glowColor: NeonColors.getNeon(_getMetricColor(index), isDark),
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Detalles de ${_getMetricTitle(index)}',
-                          style: GoogleFonts.inter(),
-                        ),
-                        backgroundColor: colorScheme.surfaceContainerHighest,
-                      ),
-                    );
-                  },
-                ),
-              );
-            },
           ),
 
           const SizedBox(height: 32),
 
-          // Quick actions
+          // Tendencia Chart
           Animate(
-            effects: [FadeEffect(duration: 400.ms)],
-            child: Text(
-              'Acciones Rápidas',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
+            effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 200))],
+            child: _buildSectionHeader(
+              context,
+              'Tendencia de Generaciones',
+              Icons.show_chart_rounded,
+              NeonColors.getNeon('cyan', isDark),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Animate(
+            effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 300))],
+            child: tendenciaAsync.when(
+              data: (tendencia) => NeonLineChart(data: tendencia, height: 320),
+              loading: () => _buildChartSkeleton(context, height: 320),
+              error: (e, _) => _buildChartError(context, e.toString()),
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 32),
 
+          // Tecnologías Grid
+          Animate(
+            effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 400))],
+            child: _buildSectionHeader(
+              context,
+              'Distribución de Tecnologías',
+              Icons.code_rounded,
+              NeonColors.getNeon('magenta', isDark),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Animate(
+            effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 500))],
+            child: tecnologiasAsync.when(
+              data: (tecnologias) => NeonDonutGrid(data: tecnologias, chartSize: 180),
+              loading: () => _buildDonutGridSkeleton(context),
+              error: (e, _) => _buildChartError(context, e.toString()),
+            ),
+          ),
+
+          const SizedBox(height: 32),
+
+          // Actividad Heatmap
+          Animate(
+            effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 600))],
+            child: _buildSectionHeader(
+              context,
+              'Mapa de Actividad',
+              Icons.grid_on_rounded,
+              NeonColors.getNeon('purple', isDark),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Animate(
+            effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 700))],
+            child: actividadAsync.when(
+              data: (actividad) => NeonHeatmap(data: actividad),
+              loading: () => _buildChartSkeleton(context, height: 300),
+              error: (e, _) => _buildChartError(context, e.toString()),
+            ),
+          ),
+
+          const SizedBox(height: 32),
+
+          // Top Proyectos
+          Animate(
+            effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 800))],
+            child: proyectosAsync.when(
+              data: (proyectos) => ProjectRankingList(proyectos: proyectos, maxItems: 5),
+              loading: () => ProjectRankingList(isLoading: true, maxItems: 5),
+              error: (e, _) => ProjectRankingList(error: e.toString(), maxItems: 5),
+            ),
+          ),
+
+          const SizedBox(height: 32),
+
+          // Quick Actions
+          Animate(
+            effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 900))],
+            child: _buildSectionHeader(
+              context,
+              'Acciones Rápidas',
+              Icons.flash_on_rounded,
+              NeonColors.getNeon('orange', isDark),
+            ),
+          ),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
                 child: Animate(
-                  effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 200))],
+                  effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 1000))],
                   child: NeonButton(
-                    label: 'Descargar',
-                    icon: Icons.download_rounded,
+                    label: 'Nueva Generación',
+                    icon: Icons.add_rounded,
                     style: NeonButtonStyle.primary,
                     isFullWidth: true,
                     onPressed: () {
-                      // TODO: Implement download action
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
@@ -211,7 +272,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
               const SizedBox(width: 12),
               Expanded(
                 child: Animate(
-                  effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 300))],
+                  effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 1100))],
                   child: NeonButton(
                     label: 'Ver Planes',
                     icon: Icons.view_module_rounded,
@@ -224,57 +285,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
             ],
           ),
 
-          const SizedBox(height: 32),
-
-          // Recent activity placeholder
-          Animate(
-            effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 600))],
-            child: GlowCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Animate(
-                    effects: [FadeEffect(duration: 400.ms)],
-                    child: Text(
-                      'Actividad Reciente',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Animate(
-                    effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 400))],
-                    child: Text(
-                      'Sin actividad reciente',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                          ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Animate(
-                    effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 500))],
-                    child: TextButton.icon(
-                      onPressed: () {
-                        // Navigate to history tab
-                        _tabController.animateTo(1);
-                      },
-                      icon: const Icon(Icons.history_rounded, size: 18),
-                      label: Text(
-                        'Ver historial completo',
-                        style: GoogleFonts.inter(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          const SizedBox(height: 24),
         ],
       ),
     );
@@ -312,8 +323,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
   Widget _buildMembershipsTab(BuildContext context) {
     return RefreshIndicator(
       onRefresh: () async {
-        await Future.delayed(const Duration(seconds: 1));
         // TODO: Refresh membership data
+        await Future.delayed(const Duration(seconds: 1));
       },
       child: ListView(
         padding: const EdgeInsets.all(16),
@@ -362,7 +373,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                         icon: Icons.refresh_rounded,
                         style: NeonButtonStyle.outline,
                         onPressed: () {
-                          // TODO: Implement renewal
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
@@ -423,79 +433,151 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
     );
   }
 
-  String _getMetricTitle(int index) {
-    switch (index) {
-      case 0:
-        return 'Generaciones Hoy';
-      case 1:
-        return 'Esta Semana';
-      case 2:
-        return 'Este Mes';
-      case 3:
-        return 'Total';
-      default:
-        return 'Métrica';
-    }
+  Widget _buildSectionHeader(
+    BuildContext context,
+    String title,
+    IconData icon,
+    Color color,
+  ) {
+    return Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ),
+      ],
+    );
   }
 
-  String _getMetricValue(int index) {
-    switch (index) {
-      case 0:
-        return '12';
-      case 1:
-        return '45';
-      case 2:
-        return '156';
-      case 3:
-        return '1.243';
-      default:
-        return '0';
-    }
+  Widget _buildChartSkeleton(BuildContext context, {double height = 200}) {
+    return SkeletonBase(
+      child: Container(
+        height: height,
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Theme.of(context).dividerColor, width: 1),
+        ),
+      ),
+    );
   }
 
-  String _getMetricSubtitle(int index) {
-    switch (index) {
-      case 0:
-        return '+2 respecto a ayer';
-      case 1:
-        return '+5 respecto a la semana anterior';
-      case 2:
-        return '+12 respecto al mes anterior';
-      case 3:
-        return 'generaciones totales';
-      default:
-        return '';
-    }
+  Widget _buildDonutGridSkeleton(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final screenWidth = MediaQuery.of(context).size.width;
+        final responsiveCrossAxisCount = Responsive.gridColumns(context, maxColumns: 4);
+        const spacing = 12.0;
+        const horizontalPadding = 32.0;
+        final availableWidth = screenWidth - horizontalPadding;
+        final totalSpacing = spacing * (responsiveCrossAxisCount - 1);
+        final availablePerItem = (availableWidth - totalSpacing) / responsiveCrossAxisCount;
+        final chartSize = (availablePerItem * 0.9).clamp(120.0, 200.0);
+        final cellHeight = chartSize + 28.0;
+        final rows = (6 / responsiveCrossAxisCount).ceil();
+        final gridHeight = cellHeight * rows + spacing * (rows - 1);
+
+        return SizedBox(
+          height: gridHeight,
+          child: GridView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: responsiveCrossAxisCount,
+              childAspectRatio: 1.0,
+              crossAxisSpacing: spacing,
+              mainAxisSpacing: spacing,
+            ),
+            itemCount: 6,
+            itemBuilder: (context, index) => const SkeletonBase(
+              child: _DonutSkeletonContent(),
+            ),
+          ),
+        );
+      },
+    );
   }
 
-  IconData _getMetricIcon(int index) {
-    switch (index) {
-      case 0:
-        return Icons.show_chart_rounded;
-      case 1:
-        return Icons.show_chart_rounded;
-      case 2:
-        return Icons.show_chart_rounded;
-      case 3:
-        return Icons.insights_rounded;
-      default:
-        return Icons.show_chart_rounded;
-    }
+  Widget _buildChartError(BuildContext context, String error) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline_rounded, size: 48, color: Colors.redAccent.withValues(alpha: 0.5)),
+            const SizedBox(height: 12),
+            Text(
+              'Error al cargar gráfico',
+              style: GoogleFonts.spaceGrotesk(fontSize: 16, color: colorScheme.onSurface.withValues(alpha: 0.7)),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              error,
+              style: GoogleFonts.inter(fontSize: 12, color: colorScheme.onSurface.withValues(alpha: 0.5)),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            NeonButton(
+              label: 'Reintentar',
+              icon: Icons.refresh_rounded,
+              style: NeonButtonStyle.primary,
+              onPressed: () {
+                // Refresh all providers
+                ref.invalidate(dashboardResumenAutoProvider);
+                ref.invalidate(dashboardTendenciaAutoProvider);
+                ref.invalidate(dashboardTecnologiasProvider);
+                ref.invalidate(dashboardActividadAutoProvider);
+                ref.invalidate(dashboardProyectosProvider);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
+}
 
-  String _getMetricColor(int index) {
-    switch (index % 4) {
-      case 0:
-        return 'cyan';
-      case 1:
-        return 'magenta';
-      case 2:
-        return 'purple';
-      case 3:
-        return 'green';
-      default:
-        return 'cyan';
-    }
+class _DonutSkeletonContent extends StatelessWidget {
+  const _DonutSkeletonContent();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Theme.of(context).dividerColor, width: 1),
+      ),
+      child: Column(
+        children: [
+          SkeletonText(width: 80, height: 14),
+          const SizedBox(height: 12),
+          Expanded(
+            child: Center(
+              child: SkeletonBox(width: 120, height: 120, borderRadius: 60),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
