@@ -1,10 +1,13 @@
 // Neon Donut Chart for Tecnologías (Distributions)
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/theme/neon_colors.dart';
 import 'package:mobile/data/models/dashboard_tecnologias.dart';
 import 'package:mobile/core/utils/responsive.dart';
+import 'package:mobile/presentation/shared/widgets/neon_card.dart'
+    show GlowCard;
 
 /// Donut chart for technology distributions
 class NeonDonutChart extends StatefulWidget {
@@ -38,6 +41,7 @@ class _NeonDonutChartState extends State<NeonDonutChart> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
+    final fontScale = Responsive.fontScale(context);
 
     // Process data: take top N, group rest as "Otros"
     final processedData = _processData(widget.data, widget.maxItems);
@@ -53,8 +57,10 @@ class _NeonDonutChartState extends State<NeonDonutChart> {
         if (widget.title.isNotEmpty) ...[
           Text(
             widget.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: GoogleFonts.spaceGrotesk(
-              fontSize: 14,
+              fontSize: 14 * fontScale,
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface,
             ),
@@ -75,23 +81,29 @@ class _NeonDonutChartState extends State<NeonDonutChart> {
                     enabled: true,
                     touchCallback: (event, response) {
                       setState(() {
-                        if (response != null && response.touchedSection != null) {
-                          _touchedIndex = response.touchedSection!.touchedSectionIndex;
+                        if (response != null &&
+                            response.touchedSection != null) {
+                          _touchedIndex =
+                              response.touchedSection!.touchedSectionIndex;
                         } else {
                           _touchedIndex = -1;
                         }
                       });
                       if (widget.onSectionTap != null) {
                         final index = _touchedIndex;
-                        widget.onSectionTap!(index >= 0 && index < processedData.length
-                            ? processedData[index]
-                            : null);
+                        widget.onSectionTap!(
+                          index >= 0 && index < processedData.length
+                              ? processedData[index]
+                              : null,
+                        );
                       }
                     },
                   ),
                   borderData: FlBorderData(show: false),
                   sectionsSpace: 2,
-                  centerSpaceRadius: widget.size * 0.45,
+                  // ~19% of the chart size as ring thickness so the donut
+                  // stays readable at small sizes (was 5%, nearly invisible).
+                  centerSpaceRadius: widget.size * 0.31,
                   sections: _buildSections(processedData, isDark),
                   startDegreeOffset: -90,
                 ),
@@ -120,19 +132,25 @@ class _NeonDonutChartState extends State<NeonDonutChart> {
       ..sort((a, b) => b.total.compareTo(a.total));
 
     final topItems = sorted.take(maxItems - 1).toList();
-    final othersCount = sorted.skip(maxItems - 1).fold(0, (sum, item) => sum + item.total);
-    final othersPercentage = sorted.skip(maxItems - 1).fold(0.0, (sum, item) => sum + item.porcentaje);
+    final othersCount = sorted
+        .skip(maxItems - 1)
+        .fold(0, (sum, item) => sum + item.total);
+    final othersPercentage = sorted
+        .skip(maxItems - 1)
+        .fold(0.0, (sum, item) => sum + item.porcentaje);
 
     if (othersCount > 0) {
-      topItems.add(TechItem(
-        id: -1,
-        nombre: 'Otros',
-        nombreCode: 'otros',
-        icono: '',
-        iconoTipo: 'none',
-        total: othersCount,
-        porcentaje: othersPercentage,
-      ));
+      topItems.add(
+        TechItem(
+          id: -1,
+          nombre: 'Otros',
+          nombreCode: 'otros',
+          icono: '',
+          iconoTipo: 'none',
+          total: othersCount,
+          porcentaje: othersPercentage,
+        ),
+      );
     }
 
     return topItems;
@@ -151,10 +169,11 @@ class _NeonDonutChartState extends State<NeonDonutChart> {
         color: color,
         value: item.porcentaje,
         title: '',
-        radius: widget.size * 0.5 * (isTouched ? 1.08 : 1.0),
-        badgeWidget: isTouched
-            ? _buildBadge(item, color, isDark)
-            : null,
+        // In fl_chart 1.x, section.radius is the ring THICKNESS added on top
+        // of centerSpaceRadius, not the outer radius. 0.31 + 0.19 = 0.5 so
+        // the donut exactly fills its SizedBox.
+        radius: widget.size * 0.19 * (isTouched ? 1.08 : 1.0),
+        badgeWidget: isTouched ? _buildBadge(item, color, isDark) : null,
         badgePositionPercentageOffset: 1.15,
         showTitle: false,
       );
@@ -225,14 +244,16 @@ class _NeonDonutChartState extends State<NeonDonutChart> {
               '${item.porcentaje.toStringAsFixed(1)}%',
               style: GoogleFonts.inter(
                 fontSize: 10,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                color: Theme.of(context).colorScheme.onSurface
+                    .withValues(alpha: 0.7),
               ),
             ),
             Text(
               '${item.total} gen',
               style: GoogleFonts.inter(
                 fontSize: 9,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                color: Theme.of(context).colorScheme.onSurface
+                    .withValues(alpha: 0.5),
               ),
             ),
           ],
@@ -241,9 +262,16 @@ class _NeonDonutChartState extends State<NeonDonutChart> {
     );
   }
 
-  Widget _buildCenterLabel(List<TechItem> data, bool isDark, ColorScheme colorScheme) {
+  Widget _buildCenterLabel(
+    List<TechItem> data,
+    bool isDark,
+    ColorScheme colorScheme,
+  ) {
     final total = data.fold(0, (sum, item) => sum + item.total);
-    final selected = _touchedIndex >= 0 && _touchedIndex < data.length ? data[_touchedIndex] : null;
+    final selected = _touchedIndex >= 0 && _touchedIndex < data.length
+        ? data[_touchedIndex]
+        : null;
+    final fontScale = Responsive.fontScale(context);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -252,7 +280,7 @@ class _NeonDonutChartState extends State<NeonDonutChart> {
           Text(
             selected.nombre,
             style: GoogleFonts.spaceGrotesk(
-              fontSize: 14,
+              fontSize: 14 * fontScale,
               fontWeight: FontWeight.w700,
               color: colorScheme.onSurface,
             ),
@@ -261,7 +289,7 @@ class _NeonDonutChartState extends State<NeonDonutChart> {
           Text(
             '${selected.porcentaje.toStringAsFixed(1)}%',
             style: GoogleFonts.orbitron(
-              fontSize: 18,
+              fontSize: 18 * fontScale,
               fontWeight: FontWeight.w700,
               color: widget.glowColor,
               letterSpacing: 0.5,
@@ -270,7 +298,7 @@ class _NeonDonutChartState extends State<NeonDonutChart> {
           Text(
             '${selected.total} de $total',
             style: GoogleFonts.inter(
-              fontSize: 10,
+              fontSize: 10 * fontScale,
               color: colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
@@ -278,14 +306,14 @@ class _NeonDonutChartState extends State<NeonDonutChart> {
           Text(
             'Total',
             style: GoogleFonts.inter(
-              fontSize: 11,
+              fontSize: 11 * fontScale,
               color: colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
           Text(
             '$total',
             style: GoogleFonts.orbitron(
-              fontSize: 24,
+              fontSize: 24 * fontScale,
               fontWeight: FontWeight.w700,
               color: colorScheme.onSurface,
               letterSpacing: 0.5,
@@ -294,7 +322,7 @@ class _NeonDonutChartState extends State<NeonDonutChart> {
           Text(
             'generaciones',
             style: GoogleFonts.inter(
-              fontSize: 10,
+              fontSize: 10 * fontScale,
               color: colorScheme.onSurface.withValues(alpha: 0.4),
             ),
           ),
@@ -303,13 +331,18 @@ class _NeonDonutChartState extends State<NeonDonutChart> {
     );
   }
 
-  Widget _buildLegend(List<TechItem> data, bool isDark, ColorScheme colorScheme) {
+  Widget _buildLegend(
+    List<TechItem> data,
+    bool isDark,
+    ColorScheme colorScheme,
+  ) {
     final colors = _getChartColors(isDark);
+    final fontScale = Responsive.fontScale(context);
 
     return Wrap(
       alignment: WrapAlignment.center,
-      spacing: 12,
-      runSpacing: 8,
+      spacing: 8 * fontScale,
+      runSpacing: 6 * fontScale,
       children: data.asMap().entries.map((entry) {
         final index = entry.key;
         final item = entry.value;
@@ -317,11 +350,16 @@ class _NeonDonutChartState extends State<NeonDonutChart> {
         final isSelected = index == _touchedIndex;
 
         return InkWell(
-          onTap: () => setState(() => _touchedIndex = _touchedIndex == index ? -1 : index),
+          onTap: () => setState(
+            () => _touchedIndex = _touchedIndex == index ? -1 : index,
+          ),
           borderRadius: BorderRadius.circular(20),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: EdgeInsets.symmetric(
+              horizontal: 10 * fontScale,
+              vertical: 6 * fontScale,
+            ),
             decoration: BoxDecoration(
               color: isSelected
                   ? color.withValues(alpha: isDark ? 0.2 : 0.1)
@@ -344,20 +382,22 @@ class _NeonDonutChartState extends State<NeonDonutChart> {
                     shape: BoxShape.circle,
                   ),
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: 6 * fontScale),
                 Text(
                   item.nombre,
                   style: GoogleFonts.inter(
-                    fontSize: 11,
+                    fontSize: 11 * fontScale,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected ? color : colorScheme.onSurface.withValues(alpha: 0.8),
+                    color: isSelected
+                        ? color
+                        : colorScheme.onSurface.withValues(alpha: 0.8),
                   ),
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: 4 * fontScale),
                 Text(
                   '${item.porcentaje.toStringAsFixed(1)}%',
                   style: GoogleFonts.inter(
-                    fontSize: 11,
+                    fontSize: 11 * fontScale,
                     fontWeight: FontWeight.w500,
                     color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
@@ -399,23 +439,221 @@ class _NeonDonutChartState extends State<NeonDonutChart> {
   }
 }
 
-/// Grid of donut charts for all technology categories
+/// Shared layout metrics for [NeonDonutGrid] and its loading skeleton.
+///
+/// The dashboard skeleton must mirror the grid exactly, so the sizing math
+/// lives here instead of being duplicated in both places.
+class DonutGridMetrics {
+  /// Spacing between grid cells.
+  static const double spacing = 12.0;
+
+  /// Inner padding of each chart card (see NeonDonutGrid._buildChartCard).
+  static const double cardPadding = 16.0;
+
+  /// Base height of the single-line card title (fontSize 14 * line height),
+  /// with slack for taller fonts. Scaled by the responsive font scale.
+  static const double titleHeight = 22.0;
+
+  /// Combined top+bottom thickness of the card border (1px per side).
+  static const double cardBorder = 2.0;
+
+  /// Gap between the title and the chart inside the card.
+  static const double titleGap = 12.0;
+
+  /// Estimated height of one row of legend chips including the wrap spacing
+  /// (~30px chip + 6px run spacing). Worst case: every chip on its own row.
+  static const double legendRowHeight = 38.0;
+
+  /// Gap between the chart and the legend inside NeonDonutChart.
+  static const double legendGap = 16.0;
+
+  /// Number of legend chips NeonDonutChart renders with maxItems: 5.
+  static const int legendChipCount = 5;
+
+  final int crossAxisCount;
+  final double cellWidth;
+  final double chartSize;
+  final double cellHeight;
+  final double aspectRatio;
+  final bool showLegend;
+
+  const DonutGridMetrics({
+    required this.crossAxisCount,
+    required this.cellWidth,
+    required this.chartSize,
+    required this.cellHeight,
+    required this.aspectRatio,
+    required this.showLegend,
+  });
+
+  /// [availableWidth] must already exclude the outer ListView padding
+  /// (16px on each side in the dashboard). [fontScale] should be
+  /// `Responsive.fontScale(context)` so titles keep their real height.
+  factory DonutGridMetrics.compute(
+    double availableWidth, {
+    bool showLegend = false,
+    double? maxChartSize,
+    int? crossAxisCount,
+    double fontScale = 1.0,
+  }) {
+    final columns =
+        crossAxisCount ?? (availableWidth >= AppBreakpoints.tablet - 32 ? 3 : 2);
+    final chartMax = maxChartSize ?? (columns >= 3 ? 180.0 : 130.0);
+    final cellWidth = (availableWidth - spacing * (columns - 1)) / columns;
+
+    // Reserve the card padding on both sides before sizing the chart so the
+    // donut never overflows its card.
+    final chartSize = ((cellWidth - cardPadding * 2) * 0.95).clamp(72.0, chartMax);
+
+    // Worst-case legend height: gap + every chip on its own row. Cards
+    // therefore never overflow even when long labels force a single chip
+    // per row.
+    final legendHeight = showLegend
+        ? legendGap + legendChipCount * legendRowHeight
+        : 0.0;
+
+    final cellHeight = cardPadding * 2 +
+        cardBorder +
+        titleHeight * fontScale +
+        titleGap +
+        chartSize +
+        legendHeight;
+
+    return DonutGridMetrics(
+      crossAxisCount: columns,
+      cellWidth: cellWidth,
+      chartSize: chartSize,
+      cellHeight: cellHeight,
+      aspectRatio: cellWidth / cellHeight,
+      showLegend: showLegend,
+    );
+  }
+
+  /// Total height of a grid holding [itemCount] cells.
+  double gridHeight(int itemCount) {
+    final rows = (itemCount / crossAxisCount).ceil();
+    return cellHeight * rows + spacing * (rows - 1);
+  }
+}
+
+/// Grid of donut charts for all technology categories with responsive layout
+/// strategies: 2 compact columns on mobile/tablet, 3 columns with legends on
+/// desktop/large desktop.
 class NeonDonutGrid extends StatelessWidget {
   final DashboardTecnologias data;
-  final int crossAxisCount;
-  final double chartSize;
+
+  /// Overrides the number of columns (null = derive from available width).
+  final int? crossAxisCount;
+
+  /// Upper bound for the chart size in pixels (null = 130 on mobile/tablet,
+  /// 180 on desktop).
+  final double? maxChartSize;
 
   const NeonDonutGrid({
     super.key,
     required this.data,
-    this.crossAxisCount = 2,
-    this.chartSize = 180,
+    this.crossAxisCount,
+    this.maxChartSize,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final categories = [
+    final categories = _getCategories(isDark);
+    final deviceType = Responsive.deviceType(context);
+    final showLegend = deviceType == DeviceType.desktop ||
+        deviceType == DeviceType.largeDesktop;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final metrics = DonutGridMetrics.compute(
+          constraints.maxWidth,
+          showLegend: showLegend,
+          maxChartSize: maxChartSize,
+          crossAxisCount: crossAxisCount,
+          fontScale: Responsive.fontScale(context),
+        );
+
+        return SizedBox(
+          height: metrics.gridHeight(categories.length),
+          child: GridView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            shrinkWrap: true,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: metrics.crossAxisCount,
+              childAspectRatio: metrics.aspectRatio,
+              crossAxisSpacing: DonutGridMetrics.spacing,
+              mainAxisSpacing: DonutGridMetrics.spacing,
+            ),
+            itemCount: categories.length,
+            itemBuilder: (context, index) {
+              final (title, items, glowColor) = categories[index];
+              final color = isDark ? glowColor : _getLightVariant(glowColor);
+
+              return _buildChartCard(
+                context: context,
+                title: title,
+                data: items,
+                glowColor: color,
+                chartSize: metrics.chartSize,
+                showLegend: metrics.showLegend,
+                index: index,
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  /// Shared chart card wrapper with consistent styling
+  Widget _buildChartCard({
+    required BuildContext context,
+    required String title,
+    required List<TechItem> data,
+    required Color glowColor,
+    required double chartSize,
+    required bool showLegend,
+    required int index,
+  }) {
+    return Animate(
+      effects: [
+        FadeEffect(
+          duration: 400.ms,
+          delay: Duration(milliseconds: 100 * index),
+        ),
+        SlideEffect(
+          begin: const Offset(0, 0.1),
+          end: Offset.zero,
+          duration: 400.ms,
+          delay: Duration(milliseconds: 100 * index),
+          curve: Curves.easeOutCubic,
+        ),
+      ],
+      child: GlowCard(
+        glowColor: glowColor.withValues(alpha: 0.15),
+        padding: EdgeInsets.zero,
+        // The grid already provides spacing between cells; GlowCard's default
+        // margin (16h/8v) would shrink the cell content and break the sizing
+        // math of DonutGridMetrics.
+        margin: EdgeInsets.zero,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: NeonDonutChart(
+            data: data,
+            title: title,
+            glowColor: glowColor,
+            maxItems: 5,
+            size: chartSize,
+            showLegend: showLegend,
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<(String, List<TechItem>, Color)> _getCategories(bool isDark) {
+    return [
       ('Lenguajes', data.lenguajes, NeonColors.cyanDark),
       ('Frameworks', data.frameworks, NeonColors.magentaDark),
       ('Arquitecturas', data.arquitecturas, NeonColors.purpleDark),
@@ -423,60 +661,6 @@ class NeonDonutGrid extends StatelessWidget {
       ('Bases de Datos', data.basesDatos, NeonColors.greenDark),
       ('Artefactos', data.tiposArtefacto, NeonColors.orangeDark),
     ];
-
-    // Use Responsive utilities instead of LayoutBuilder to avoid infinite constraints
-    final responsiveCrossAxisCount = Responsive.gridColumns(context, maxColumns: 4);
-    final screenWidth = MediaQuery.of(context).size.width;
-    final responsiveChartSize = _calculateChartSize(screenWidth, responsiveCrossAxisCount);
-
-    // Calculate grid height to avoid infinite constraints when used inside ListView
-    const spacing = 12.0;
-    const horizontalPadding = 32.0;
-    final availableWidth = screenWidth - horizontalPadding;
-    final totalSpacing = spacing * (responsiveCrossAxisCount - 1);
-    final availablePerItem = (availableWidth - totalSpacing) / responsiveCrossAxisCount;
-    // Each cell has title (~20) + chart (responsiveChartSize) + small padding
-    final cellHeight = responsiveChartSize + 28.0;
-    final rows = (categories.length / responsiveCrossAxisCount).ceil();
-    final gridHeight = cellHeight * rows + spacing * (rows - 1);
-
-    return SizedBox(
-      height: gridHeight,
-      child: GridView.builder(
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: responsiveCrossAxisCount,
-          childAspectRatio: 1.0,
-          crossAxisSpacing: spacing,
-          mainAxisSpacing: spacing,
-        ),
-        itemCount: categories.length,
-        itemBuilder: (context, index) {
-          final (title, items, glowColor) = categories[index];
-          final color = isDark ? glowColor : _getLightVariant(glowColor);
-
-          return NeonDonutChart(
-            data: items,
-            title: title,
-            glowColor: color,
-            maxItems: 5,
-            size: responsiveChartSize,
-            showLegend: false,
-          );
-        },
-      ),
-    );
-  }
-
-  double _calculateChartSize(double screenWidth, int crossAxisCount) {
-    // Account for padding and spacing
-    const horizontalPadding = 32.0; // Responsive.padding horizontal
-    const spacing = 12.0;
-    final availableWidth = screenWidth - horizontalPadding;
-    final totalSpacing = spacing * (crossAxisCount - 1);
-    final availablePerItem = (availableWidth - totalSpacing) / crossAxisCount;
-    // Return size that fits within the grid cell, with some margin
-    return (availablePerItem * 0.9).clamp(120.0, 200.0);
   }
 
   Color _getLightVariant(Color darkColor) {
@@ -521,7 +705,8 @@ class NeonMiniDonutChart extends StatelessWidget {
           child: Icon(
             Icons.pie_chart_rounded,
             size: size * 0.4,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
+            color: Theme.of(context).colorScheme.onSurface
+                .withValues(alpha: 0.2),
           ),
         ),
       );
@@ -538,7 +723,9 @@ class NeonMiniDonutChart extends StatelessWidget {
               pieTouchData: PieTouchData(enabled: false),
               borderData: FlBorderData(show: false),
               sectionsSpace: 1,
-              centerSpaceRadius: size * 0.5,
+              // section.radius is the ring thickness on top of the center
+              // hole (fl_chart 1.x): 0.31 + 0.19 = 0.5 fills the box exactly.
+              centerSpaceRadius: size * 0.31,
               sections: _buildSections(processedData, isDark),
               startDegreeOffset: -90,
             ),
@@ -565,18 +752,22 @@ class NeonMiniDonutChart extends StatelessWidget {
       ..sort((a, b) => b.total.compareTo(a.total));
 
     final topItems = sorted.take(maxItems - 1).toList();
-    final othersCount = sorted.skip(maxItems - 1).fold(0, (sum, item) => sum + item.total);
+    final othersCount = sorted
+        .skip(maxItems - 1)
+        .fold(0, (sum, item) => sum + item.total);
 
     if (othersCount > 0) {
-      topItems.add(TechItem(
-        id: -1,
-        nombre: 'Otros',
-        nombreCode: 'otros',
-        icono: '',
-        iconoTipo: 'none',
-        total: othersCount,
-        porcentaje: 0,
-      ));
+      topItems.add(
+        TechItem(
+          id: -1,
+          nombre: 'Otros',
+          nombreCode: 'otros',
+          icono: '',
+          iconoTipo: 'none',
+          total: othersCount,
+          porcentaje: 0,
+        ),
+      );
     }
 
     return topItems;
@@ -592,9 +783,11 @@ class NeonMiniDonutChart extends StatelessWidget {
 
       return PieChartSectionData(
         color: color,
-        value: item.porcentaje > 0 ? item.porcentaje : (item.total / data.fold(0, (s, i) => s + i.total) * 100),
+        value: item.porcentaje > 0
+            ? item.porcentaje
+            : (item.total / data.fold(0, (s, i) => s + i.total) * 100),
         title: '',
-        radius: size * 0.5,
+        radius: size * 0.19,
         showTitle: false,
       );
     }).toList();

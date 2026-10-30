@@ -142,9 +142,9 @@ class AppBottomNavBar extends ConsumerWidget {
       route: '/profile',
     ),
     _NavItem(
-      icon: Icons.chat_bubble_outline_rounded,
-      activeIcon: Icons.chat_bubble_rounded,
-      label: 'Chat',
+      icon: Icons.smart_toy_outlined,
+      activeIcon: Icons.smart_toy_rounded,
+      label: 'Chat IA',
       route: '/chat',
     ),
   ];

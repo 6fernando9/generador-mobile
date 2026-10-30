@@ -8,7 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/presentation/shared/widgets/neon_background.dart';
 import 'package:mobile/presentation/shared/widgets/neon_button.dart';
 import 'package:mobile/presentation/shared/widgets/neon_card.dart'
-    show GlowCard, NeonMetricCard, NeonBadge, NeonBadgeStyle;
+    show GlowCard, NeonBadge, NeonBadgeStyle;
 import 'package:mobile/presentation/shared/widgets/skeleton_base.dart'
     show SkeletonBase, SkeletonBox, SkeletonText;
 import 'package:mobile/presentation/shared/theme/theme_switcher.dart';
@@ -40,7 +40,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
   static const List<_DashboardTab> _tabs = [
     _DashboardTab(icon: Icons.insights_rounded, label: 'Resumen', index: 0),
     _DashboardTab(icon: Icons.download_rounded, label: 'Historial', index: 1),
-    _DashboardTab(icon: Icons.credit_card_rounded, label: 'Membresías', index: 2),
+    _DashboardTab(
+      icon: Icons.credit_card_rounded,
+      label: 'Membresías',
+      index: 2,
+    ),
   ];
 
   @override
@@ -72,9 +76,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
         centerTitle: true,
         actions: [
           // Theme toggle
-          ThemeToggleButton(
-            iconSize: 22,
-          ),
+          ThemeToggleButton(iconSize: 22),
           const SizedBox(width: 8),
         ],
       ),
@@ -100,8 +102,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                 controller: _tabController,
                 indicatorColor: colorScheme.primary,
                 labelColor: colorScheme.primary,
-                unselectedLabelColor: colorScheme.onSurface.withValues(alpha: 0.5),
-                tabs: _tabs.map((tab) => Tab(icon: Icon(tab.icon), text: tab.label)).toList(),
+                unselectedLabelColor: colorScheme.onSurface.withValues(
+                  alpha: 0.5,
+                ),
+                tabs: _tabs
+                    .map((tab) => Tab(icon: Icon(tab.icon), text: tab.label))
+                    .toList(),
               ),
             ],
           ),
@@ -146,7 +152,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
 
           // KPI Cards Row
           Animate(
-            effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 100))],
+            effects: [
+              FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 100)),
+            ],
             child: resumenAsync.when(
               data: (resumen) => KpiCardRow(resumen: resumen),
               loading: () => KpiCardRow(isLoading: true),
@@ -158,7 +166,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
 
           // Tendencia Chart
           Animate(
-            effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 200))],
+            effects: [
+              FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 200)),
+            ],
             child: _buildSectionHeader(
               context,
               'Tendencia de Generaciones',
@@ -168,10 +178,15 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
           ),
           const SizedBox(height: 12),
           Animate(
-            effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 300))],
+            effects: [
+              FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 300)),
+            ],
             child: tendenciaAsync.when(
-              data: (tendencia) => NeonLineChart(data: tendencia, height: 320),
-              loading: () => _buildChartSkeleton(context, height: 320),
+              data: (tendencia) => NeonLineChart(data: tendencia),
+              loading: () => _buildChartSkeleton(
+                context,
+                height: NeonLineChart.responsiveHeight(context),
+              ),
               error: (e, _) => _buildChartError(context, e.toString()),
             ),
           ),
@@ -180,7 +195,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
 
           // Tecnologías Grid
           Animate(
-            effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 400))],
+            effects: [
+              FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 400)),
+            ],
             child: _buildSectionHeader(
               context,
               'Distribución de Tecnologías',
@@ -190,9 +207,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
           ),
           const SizedBox(height: 12),
           Animate(
-            effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 500))],
+            effects: [
+              FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 500)),
+            ],
             child: tecnologiasAsync.when(
-              data: (tecnologias) => NeonDonutGrid(data: tecnologias, chartSize: 180),
+              data: (tecnologias) => NeonDonutGrid(data: tecnologias),
               loading: () => _buildDonutGridSkeleton(context),
               error: (e, _) => _buildChartError(context, e.toString()),
             ),
@@ -202,7 +221,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
 
           // Actividad Heatmap
           Animate(
-            effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 600))],
+            effects: [
+              FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 600)),
+            ],
             child: _buildSectionHeader(
               context,
               'Mapa de Actividad',
@@ -212,7 +233,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
           ),
           const SizedBox(height: 12),
           Animate(
-            effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 700))],
+            effects: [
+              FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 700)),
+            ],
             child: actividadAsync.when(
               data: (actividad) => NeonHeatmap(data: actividad),
               loading: () => _buildChartSkeleton(context, height: 300),
@@ -224,11 +247,15 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
 
           // Top Proyectos
           Animate(
-            effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 800))],
+            effects: [
+              FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 800)),
+            ],
             child: proyectosAsync.when(
-              data: (proyectos) => ProjectRankingList(proyectos: proyectos, maxItems: 5),
+              data: (proyectos) =>
+                  ProjectRankingList(proyectos: proyectos, maxItems: 5),
               loading: () => ProjectRankingList(isLoading: true, maxItems: 5),
-              error: (e, _) => ProjectRankingList(error: e.toString(), maxItems: 5),
+              error: (e, _) =>
+                  ProjectRankingList(error: e.toString(), maxItems: 5),
             ),
           ),
 
@@ -236,7 +263,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
 
           // Quick Actions
           Animate(
-            effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 900))],
+            effects: [
+              FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 900)),
+            ],
             child: _buildSectionHeader(
               context,
               'Acciones Rápidas',
@@ -249,7 +278,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
             children: [
               Expanded(
                 child: Animate(
-                  effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 1000))],
+                  effects: [
+                    FadeEffect(
+                      duration: 400.ms,
+                      delay: Duration(milliseconds: 1000),
+                    ),
+                  ],
                   child: NeonButton(
                     label: 'Nueva Generación',
                     icon: Icons.add_rounded,
@@ -272,7 +306,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
               const SizedBox(width: 12),
               Expanded(
                 child: Animate(
-                  effects: [FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 1100))],
+                  effects: [
+                    FadeEffect(
+                      duration: 400.ms,
+                      delay: Duration(milliseconds: 1100),
+                    ),
+                  ],
                   child: NeonButton(
                     label: 'Ver Planes',
                     icon: Icons.view_module_rounded,
@@ -335,7 +374,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
           Animate(
             effects: [FadeEffect(duration: 400.ms)],
             child: GlowCard(
-              glowColor: NeonColors.getNeon('green', Theme.of(context).brightness == Brightness.dark),
+              glowColor: NeonColors.getNeon(
+                'green',
+                Theme.of(context).brightness == Brightness.dark,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -344,9 +386,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                     child: Text(
                       'Tu Suscripción',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -357,14 +399,19 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                         icon: Icons.star_rounded,
                         color: NeonColors.green,
                         style: NeonBadgeStyle.filled,
-                        glowColor: NeonColors.getGlow('green', Theme.of(context).brightness == Brightness.dark),
+                        glowColor: NeonColors.getGlow(
+                          'green',
+                          Theme.of(context).brightness == Brightness.dark,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           'Vige hasta 31/12/2024',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface
+                                    .withValues(alpha: 0.7),
                               ),
                         ),
                       ),
@@ -379,11 +426,16 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                                 'Función en desarrollo',
                                 style: GoogleFonts.inter(),
                               ),
-                              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                              backgroundColor: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest,
                             ),
                           );
                         },
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                       ),
                     ],
                   ),
@@ -403,9 +455,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                 Text(
                   'Historial de Pagos',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 TextButton.icon(
                   onPressed: () {
@@ -456,9 +508,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
           child: Text(
             title,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontWeight: FontWeight.w600,
-                ),
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],
@@ -479,37 +531,35 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
   }
 
   Widget _buildDonutGridSkeleton(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final screenWidth = MediaQuery.of(context).size.width;
-        final responsiveCrossAxisCount = Responsive.gridColumns(context, maxColumns: 4);
-        const spacing = 12.0;
-        const horizontalPadding = 32.0;
-        final availableWidth = screenWidth - horizontalPadding;
-        final totalSpacing = spacing * (responsiveCrossAxisCount - 1);
-        final availablePerItem = (availableWidth - totalSpacing) / responsiveCrossAxisCount;
-        final chartSize = (availablePerItem * 0.9).clamp(120.0, 200.0);
-        final cellHeight = chartSize + 28.0;
-        final rows = (6 / responsiveCrossAxisCount).ceil();
-        final gridHeight = cellHeight * rows + spacing * (rows - 1);
+    // Mirror NeonDonutGrid sizing via the shared DonutGridMetrics helper.
+    final deviceType = Responsive.deviceType(context);
+    final showLegend = deviceType == DeviceType.desktop ||
+        deviceType == DeviceType.largeDesktop;
 
-        return SizedBox(
-          height: gridHeight,
-          child: GridView.builder(
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: responsiveCrossAxisCount,
-              childAspectRatio: 1.0,
-              crossAxisSpacing: spacing,
-              mainAxisSpacing: spacing,
-            ),
-            itemCount: 6,
-            itemBuilder: (context, index) => const SkeletonBase(
-              child: _DonutSkeletonContent(),
-            ),
-          ),
-        );
-      },
+    // The dashboard ListView pads its children by 16px on each side, which is
+    // exactly what NeonDonutGrid receives through its LayoutBuilder.
+    final metrics = DonutGridMetrics.compute(
+      MediaQuery.sizeOf(context).width - 32,
+      showLegend: showLegend,
+      fontScale: Responsive.fontScale(context),
+    );
+
+    return SizedBox(
+      height: metrics.gridHeight(6),
+      child: GridView.builder(
+        physics: const NeverScrollableScrollPhysics(),
+        shrinkWrap: true,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: metrics.crossAxisCount,
+          childAspectRatio: metrics.aspectRatio,
+          crossAxisSpacing: DonutGridMetrics.spacing,
+          mainAxisSpacing: DonutGridMetrics.spacing,
+        ),
+        itemCount: 6,
+        itemBuilder: (context, index) => SkeletonBase(
+          child: _DonutSkeletonContent(chartSize: metrics.chartSize),
+        ),
+      ),
     );
   }
 
@@ -521,16 +571,26 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline_rounded, size: 48, color: Colors.redAccent.withValues(alpha: 0.5)),
+            Icon(
+              Icons.error_outline_rounded,
+              size: 48,
+              color: Colors.redAccent.withValues(alpha: 0.5),
+            ),
             const SizedBox(height: 12),
             Text(
               'Error al cargar gráfico',
-              style: GoogleFonts.spaceGrotesk(fontSize: 16, color: colorScheme.onSurface.withValues(alpha: 0.7)),
+              style: GoogleFonts.spaceGrotesk(
+                fontSize: 16,
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               error,
-              style: GoogleFonts.inter(fontSize: 12, color: colorScheme.onSurface.withValues(alpha: 0.5)),
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
@@ -555,7 +615,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
 }
 
 class _DonutSkeletonContent extends StatelessWidget {
-  const _DonutSkeletonContent();
+  final double chartSize;
+
+  const _DonutSkeletonContent({this.chartSize = 120});
 
   @override
   Widget build(BuildContext context) {
@@ -572,7 +634,11 @@ class _DonutSkeletonContent extends StatelessWidget {
           const SizedBox(height: 12),
           Expanded(
             child: Center(
-              child: SkeletonBox(width: 120, height: 120, borderRadius: 60),
+              child: SkeletonBox(
+                width: chartSize,
+                height: chartSize,
+                borderRadius: chartSize / 2,
+              ),
             ),
           ),
         ],

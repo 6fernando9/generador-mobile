@@ -11,14 +11,31 @@ import 'package:mobile/presentation/shared/widgets/neon_card.dart'
 class NeonLineChart extends StatefulWidget {
   final DashboardTendencia data;
   final bool showArtifactBreakdown;
-  final double height;
+
+  /// Fixed chart height. When null, the height is computed responsively from
+  /// the available width (see [responsiveHeight]).
+  final double? height;
 
   const NeonLineChart({
     super.key,
     required this.data,
     this.showArtifactBreakdown = true,
-    this.height = 300,
+    this.height,
   });
+
+  /// Horizontal padding used by the dashboard ListView (EdgeInsets.all(16)).
+  static const double _horizontalPadding = 32.0;
+
+  /// Responsive chart height derived from the screen width. Shared with the
+  /// dashboard skeleton so both stay in sync.
+  static double responsiveHeight(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final availableWidth = (screenWidth - _horizontalPadding).clamp(
+      0.0,
+      double.infinity,
+    );
+    return (availableWidth * 0.55).clamp(220.0, 320.0);
+  }
 
   @override
   State<NeonLineChart> createState() => _NeonLineChartState();
@@ -43,8 +60,12 @@ class _NeonLineChartState extends State<NeonLineChart> {
     final frontendSpots = _buildFrontendSpots(data.serie);
     final mobileSpots = _buildMobileSpots(data.serie);
 
+    final chartHeight =
+        widget.height ?? NeonLineChart.responsiveHeight(context);
+    final isNarrow = MediaQuery.sizeOf(context).width < 600;
+
     return Container(
-      height: widget.height,
+      height: chartHeight,
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
@@ -193,8 +214,9 @@ class _NeonLineChartState extends State<NeonLineChart> {
                     ],
                   ),
                 ),
-                // Legend
-                if (widget.showArtifactBreakdown)
+                // Legend (floating only on wide screens; narrow screens get
+                // a wrap below the chart to avoid overlapping the line)
+                if (widget.showArtifactBreakdown && !isNarrow)
                   Positioned(
                     top: 8,
                     right: 8,
@@ -203,6 +225,11 @@ class _NeonLineChartState extends State<NeonLineChart> {
               ],
             ),
           ),
+          // Legend below chart on narrow screens
+          if (widget.showArtifactBreakdown && isNarrow) ...[
+            const SizedBox(height: 8),
+            _buildLegendWrap(isDark, colorScheme),
+          ],
           // Selected point details
           if (_selectedIndex != null && _selectedIndex! < data.serie.length)
             _buildSelectedPointDetails(data, _selectedIndex!, isDark, colorScheme, context),
@@ -414,6 +441,21 @@ class _NeonLineChartState extends State<NeonLineChart> {
           _buildLegendItem('Mobile', NeonColors.getNeon('green', isDark), colorScheme),
         ],
       ),
+    );
+  }
+
+  /// Compact horizontal legend used on narrow screens (below the chart).
+  Widget _buildLegendWrap(bool isDark, ColorScheme colorScheme) {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 4,
+      alignment: WrapAlignment.center,
+      children: [
+        _buildLegendItem('Total', NeonColors.getNeon('cyan', isDark), colorScheme),
+        _buildLegendItem('Backend', NeonColors.getNeon('magenta', isDark), colorScheme),
+        _buildLegendItem('Frontend', NeonColors.getNeon('purple', isDark), colorScheme),
+        _buildLegendItem('Mobile', NeonColors.getNeon('green', isDark), colorScheme),
+      ],
     );
   }
 
