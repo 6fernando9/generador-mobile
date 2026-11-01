@@ -36,6 +36,9 @@ class ApiEndpoints {
       '/pagos/sincronizar-pendientes';
 
   // Logs (Download history) endpoints
+  static const String logsMisLogs = '/logs/mis-logs';
+  static const String logsMisLogsFilterOptions =
+      '/logs/mis-logs/filter-options';
   static const String logs = '/logs/';
   static const String logsDetail = '/logs/:id';
   static const String logsRegenerar = '/logs/:id/regenerar';

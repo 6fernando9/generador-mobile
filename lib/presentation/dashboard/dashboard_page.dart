@@ -11,7 +11,7 @@ import 'package:mobile/presentation/shared/widgets/neon_card.dart'
 import 'package:mobile/presentation/shared/widgets/skeleton_base.dart'
     show SkeletonBase;
 import 'package:mobile/presentation/shared/theme/theme_switcher.dart';
-import 'package:mobile/presentation/dashboard/widgets/download_history_list.dart';
+import 'package:mobile/presentation/dashboard/history/generation_history_view.dart';
 import 'package:mobile/presentation/dashboard/widgets/membership_history_list.dart';
 import 'package:mobile/presentation/dashboard/widgets/date_range_selector.dart';
 import 'package:mobile/presentation/dashboard/widgets/kpi_card_row.dart';
@@ -326,32 +326,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
   }
 
   Widget _buildHistoryTab(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Column(
-        children: [
-          const TabBar(
-            tabs: [
-              Tab(icon: Icon(Icons.code_rounded), text: 'Generaciones'),
-              Tab(icon: Icon(Icons.description_rounded), text: 'Archivos'),
-            ],
-          ),
-          Expanded(
-            child: TabBarView(
-              children: [
-                DownloadHistoryList(),
-                const Center(
-                  child: Text(
-                    'Los archivos se descargarán desde aquí',
-                    style: TextStyle(fontSize: 16),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+    return const GenerationHistoryView();
   }
 
   Widget _buildMembershipsTab(BuildContext context) {

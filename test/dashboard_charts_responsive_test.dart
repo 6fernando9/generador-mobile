@@ -7,15 +7,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:mobile/data/models/dashboard_actividad.dart';
 import 'package:mobile/data/models/dashboard_catalogos.dart';
 import 'package:mobile/data/models/dashboard_resumen.dart';
 import 'package:mobile/data/models/dashboard_tecnologias.dart';
 import 'package:mobile/data/models/dashboard_tendencia.dart';
 import 'package:mobile/presentation/dashboard/dashboard_providers.dart';
 import 'package:mobile/presentation/dashboard/widgets/charts/neon_donut_chart.dart';
+import 'package:mobile/presentation/dashboard/widgets/charts/neon_heatmap.dart';
 import 'package:mobile/presentation/dashboard/widgets/charts/neon_line_chart.dart';
 import 'package:mobile/presentation/dashboard/widgets/kpi_card_row.dart';
 import 'package:mobile/presentation/dashboard/widgets/tecnologias_section.dart';
+
+DashboardActividad _actividad() => DashboardActividad(
+  total: 168,
+  heatmap: [
+    for (var day = 0; day < 7; day++)
+      for (var hour = 0; hour < 24; hour++)
+        HeatmapPoint(dia: day, hora: hour, total: (day * 24 + hour) % 7),
+  ],
+);
 
 DashboardResumen _resumen() => const DashboardResumen(
   hoy: 2,
@@ -199,6 +210,33 @@ void main() {
         tester.takeException(),
         isNull,
         reason: 'KpiCardRow overflowed with textScale 1.4 at $size',
+      );
+    }
+  });
+
+  testWidgets('NeonHeatmap fits without overflow at multiple sizes', (
+    tester,
+  ) async {
+    for (final size in _sizes) {
+      await _pumpAtSize(tester, size, NeonHeatmap(data: _actividad()));
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'NeonHeatmap overflowed at logical size $size',
+      );
+    }
+  });
+
+  testWidgets('NeonHeatmap fits with large text scale', (tester) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 1.4;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+    for (final size in _sizes) {
+      await _pumpAtSize(tester, size, NeonHeatmap(data: _actividad()));
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'NeonHeatmap overflowed with textScale 1.4 at $size',
       );
     }
   });
