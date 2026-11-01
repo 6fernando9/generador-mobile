@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$DashboardResumen {
 
- int get hoy; int get ayer; int get semana; int get semanaPasada; int get mes; int get mesPasado; int get total; Deltas get deltas;
+ int get hoy; int get ayer; int get semana;@JsonKey(name: 'semana_pasada') int get semanaPasada; int get mes;@JsonKey(name: 'mes_pasado') int get mesPasado; int get total; Deltas get deltas;
 /// Create a copy of DashboardResumen
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -54,7 +54,7 @@ abstract mixin class $DashboardResumenCopyWith<$Res>  {
   factory $DashboardResumenCopyWith(DashboardResumen value, $Res Function(DashboardResumen) _then) = _$DashboardResumenCopyWithImpl;
 @useResult
 $Res call({
- int hoy, int ayer, int semana, int semanaPasada, int mes, int mesPasado, int total, Deltas deltas
+ int hoy, int ayer, int semana,@JsonKey(name: 'semana_pasada') int semanaPasada, int mes,@JsonKey(name: 'mes_pasado') int mesPasado, int total, Deltas deltas
 });
 
 
@@ -175,7 +175,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int hoy,  int ayer,  int semana,  int semanaPasada,  int mes,  int mesPasado,  int total,  Deltas deltas)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int hoy,  int ayer,  int semana, @JsonKey(name: 'semana_pasada')  int semanaPasada,  int mes, @JsonKey(name: 'mes_pasado')  int mesPasado,  int total,  Deltas deltas)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _DashboardResumen() when $default != null:
 return $default(_that.hoy,_that.ayer,_that.semana,_that.semanaPasada,_that.mes,_that.mesPasado,_that.total,_that.deltas);case _:
@@ -196,7 +196,7 @@ return $default(_that.hoy,_that.ayer,_that.semana,_that.semanaPasada,_that.mes,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int hoy,  int ayer,  int semana,  int semanaPasada,  int mes,  int mesPasado,  int total,  Deltas deltas)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int hoy,  int ayer,  int semana, @JsonKey(name: 'semana_pasada')  int semanaPasada,  int mes, @JsonKey(name: 'mes_pasado')  int mesPasado,  int total,  Deltas deltas)  $default,) {final _that = this;
 switch (_that) {
 case _DashboardResumen():
 return $default(_that.hoy,_that.ayer,_that.semana,_that.semanaPasada,_that.mes,_that.mesPasado,_that.total,_that.deltas);case _:
@@ -216,7 +216,7 @@ return $default(_that.hoy,_that.ayer,_that.semana,_that.semanaPasada,_that.mes,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int hoy,  int ayer,  int semana,  int semanaPasada,  int mes,  int mesPasado,  int total,  Deltas deltas)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int hoy,  int ayer,  int semana, @JsonKey(name: 'semana_pasada')  int semanaPasada,  int mes, @JsonKey(name: 'mes_pasado')  int mesPasado,  int total,  Deltas deltas)?  $default,) {final _that = this;
 switch (_that) {
 case _DashboardResumen() when $default != null:
 return $default(_that.hoy,_that.ayer,_that.semana,_that.semanaPasada,_that.mes,_that.mesPasado,_that.total,_that.deltas);case _:
@@ -231,15 +231,15 @@ return $default(_that.hoy,_that.ayer,_that.semana,_that.semanaPasada,_that.mes,_
 @JsonSerializable()
 
 class _DashboardResumen implements DashboardResumen {
-  const _DashboardResumen({this.hoy = 0, this.ayer = 0, this.semana = 0, this.semanaPasada = 0, this.mes = 0, this.mesPasado = 0, this.total = 0, this.deltas = const Deltas()});
+  const _DashboardResumen({this.hoy = 0, this.ayer = 0, this.semana = 0, @JsonKey(name: 'semana_pasada') this.semanaPasada = 0, this.mes = 0, @JsonKey(name: 'mes_pasado') this.mesPasado = 0, this.total = 0, this.deltas = const Deltas()});
   factory _DashboardResumen.fromJson(Map<String, dynamic> json) => _$DashboardResumenFromJson(json);
 
 @override@JsonKey() final  int hoy;
 @override@JsonKey() final  int ayer;
 @override@JsonKey() final  int semana;
-@override@JsonKey() final  int semanaPasada;
+@override@JsonKey(name: 'semana_pasada') final  int semanaPasada;
 @override@JsonKey() final  int mes;
-@override@JsonKey() final  int mesPasado;
+@override@JsonKey(name: 'mes_pasado') final  int mesPasado;
 @override@JsonKey() final  int total;
 @override@JsonKey() final  Deltas deltas;
 
@@ -278,7 +278,7 @@ abstract mixin class _$DashboardResumenCopyWith<$Res> implements $DashboardResum
   factory _$DashboardResumenCopyWith(_DashboardResumen value, $Res Function(_DashboardResumen) _then) = __$DashboardResumenCopyWithImpl;
 @override @useResult
 $Res call({
- int hoy, int ayer, int semana, int semanaPasada, int mes, int mesPasado, int total, Deltas deltas
+ int hoy, int ayer, int semana,@JsonKey(name: 'semana_pasada') int semanaPasada, int mes,@JsonKey(name: 'mes_pasado') int mesPasado, int total, Deltas deltas
 });
 
 
@@ -325,7 +325,7 @@ $DeltasCopyWith<$Res> get deltas {
 /// @nodoc
 mixin _$Deltas {
 
- double get hoy; double get semana; double get mes;
+ double? get hoy; double? get semana; double? get mes;
 /// Create a copy of Deltas
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -363,7 +363,7 @@ abstract mixin class $DeltasCopyWith<$Res>  {
   factory $DeltasCopyWith(Deltas value, $Res Function(Deltas) _then) = _$DeltasCopyWithImpl;
 @useResult
 $Res call({
- double hoy, double semana, double mes
+ double? hoy, double? semana, double? mes
 });
 
 
@@ -380,12 +380,12 @@ class _$DeltasCopyWithImpl<$Res>
 
 /// Create a copy of Deltas
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? hoy = null,Object? semana = null,Object? mes = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? hoy = freezed,Object? semana = freezed,Object? mes = freezed,}) {
   return _then(Deltas(
-hoy: null == hoy ? _self.hoy : hoy // ignore: cast_nullable_to_non_nullable
-as double,semana: null == semana ? _self.semana : semana // ignore: cast_nullable_to_non_nullable
-as double,mes: null == mes ? _self.mes : mes // ignore: cast_nullable_to_non_nullable
-as double,
+hoy: freezed == hoy ? _self.hoy : hoy // ignore: cast_nullable_to_non_nullable
+as double?,semana: freezed == semana ? _self.semana : semana // ignore: cast_nullable_to_non_nullable
+as double?,mes: freezed == mes ? _self.mes : mes // ignore: cast_nullable_to_non_nullable
+as double?,
   ));
 }
 
@@ -470,7 +470,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( double hoy,  double semana,  double mes)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( double? hoy,  double? semana,  double? mes)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Deltas() when $default != null:
 return $default(_that.hoy,_that.semana,_that.mes);case _:
@@ -491,7 +491,7 @@ return $default(_that.hoy,_that.semana,_that.mes);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( double hoy,  double semana,  double mes)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( double? hoy,  double? semana,  double? mes)  $default,) {final _that = this;
 switch (_that) {
 case _Deltas():
 return $default(_that.hoy,_that.semana,_that.mes);case _:
@@ -511,7 +511,7 @@ return $default(_that.hoy,_that.semana,_that.mes);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( double hoy,  double semana,  double mes)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( double? hoy,  double? semana,  double? mes)?  $default,) {final _that = this;
 switch (_that) {
 case _Deltas() when $default != null:
 return $default(_that.hoy,_that.semana,_that.mes);case _:
@@ -526,12 +526,12 @@ return $default(_that.hoy,_that.semana,_that.mes);case _:
 @JsonSerializable()
 
 class _Deltas implements Deltas {
-  const _Deltas({this.hoy = 0.0, this.semana = 0.0, this.mes = 0.0});
+  const _Deltas({this.hoy, this.semana, this.mes});
   factory _Deltas.fromJson(Map<String, dynamic> json) => _$DeltasFromJson(json);
 
-@override@JsonKey() final  double hoy;
-@override@JsonKey() final  double semana;
-@override@JsonKey() final  double mes;
+@override final  double? hoy;
+@override final  double? semana;
+@override final  double? mes;
 
 /// Create a copy of Deltas
 /// with the given fields replaced by the non-null parameter values.
@@ -568,7 +568,7 @@ abstract mixin class _$DeltasCopyWith<$Res> implements $DeltasCopyWith<$Res> {
   factory _$DeltasCopyWith(_Deltas value, $Res Function(_Deltas) _then) = __$DeltasCopyWithImpl;
 @override @useResult
 $Res call({
- double hoy, double semana, double mes
+ double? hoy, double? semana, double? mes
 });
 
 
@@ -585,12 +585,12 @@ class __$DeltasCopyWithImpl<$Res>
 
 /// Create a copy of Deltas
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? hoy = null,Object? semana = null,Object? mes = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? hoy = freezed,Object? semana = freezed,Object? mes = freezed,}) {
   return _then(_Deltas(
-hoy: null == hoy ? _self.hoy : hoy // ignore: cast_nullable_to_non_nullable
-as double,semana: null == semana ? _self.semana : semana // ignore: cast_nullable_to_non_nullable
-as double,mes: null == mes ? _self.mes : mes // ignore: cast_nullable_to_non_nullable
-as double,
+hoy: freezed == hoy ? _self.hoy : hoy // ignore: cast_nullable_to_non_nullable
+as double?,semana: freezed == semana ? _self.semana : semana // ignore: cast_nullable_to_non_nullable
+as double?,mes: freezed == mes ? _self.mes : mes // ignore: cast_nullable_to_non_nullable
+as double?,
   ));
 }
 

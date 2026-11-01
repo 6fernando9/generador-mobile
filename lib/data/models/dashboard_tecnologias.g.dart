@@ -31,12 +31,22 @@ _DashboardTecnologias _$DashboardTecnologiasFromJson(
           .toList() ??
       const [],
   basesDatos:
-      (json['basesDatos'] as List<dynamic>?)
+      (json['bases_datos'] as List<dynamic>?)
           ?.map((e) => TechItem.fromJson(e as Map<String, dynamic>))
           .toList() ??
       const [],
   tiposArtefacto:
-      (json['tiposArtefacto'] as List<dynamic>?)
+      (json['tipos_artefacto'] as List<dynamic>?)
+          ?.map((e) => TechItem.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      const [],
+  tiposReporte:
+      (json['tipos_reporte'] as List<dynamic>?)
+          ?.map((e) => TechItem.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      const [],
+  tiposXml:
+      (json['tipos_xml'] as List<dynamic>?)
           ?.map((e) => TechItem.fromJson(e as Map<String, dynamic>))
           .toList() ??
       const [],
@@ -50,8 +60,10 @@ Map<String, dynamic> _$DashboardTecnologiasToJson(
   'frameworks': instance.frameworks,
   'arquitecturas': instance.arquitecturas,
   'orms': instance.orms,
-  'basesDatos': instance.basesDatos,
-  'tiposArtefacto': instance.tiposArtefacto,
+  'bases_datos': instance.basesDatos,
+  'tipos_artefacto': instance.tiposArtefacto,
+  'tipos_reporte': instance.tiposReporte,
+  'tipos_xml': instance.tiposXml,
 };
 
 _TechItem _$TechItemFromJson(Map<String, dynamic> json) => _TechItem(

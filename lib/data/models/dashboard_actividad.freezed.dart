@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$DashboardActividad {
 
- int get total; List<DayOfWeekStat> get porDiaSemana; List<HourStat> get porHora; List<HeatmapPoint> get heatmap;
+ int get total;@JsonKey(name: 'por_dia_semana') List<DayOfWeekStat> get porDiaSemana;@JsonKey(name: 'por_hora') List<HourStat> get porHora; List<HeatmapPoint> get heatmap;
 /// Create a copy of DashboardActividad
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -54,7 +54,7 @@ abstract mixin class $DashboardActividadCopyWith<$Res>  {
   factory $DashboardActividadCopyWith(DashboardActividad value, $Res Function(DashboardActividad) _then) = _$DashboardActividadCopyWithImpl;
 @useResult
 $Res call({
- int total, List<DayOfWeekStat> porDiaSemana, List<HourStat> porHora, List<HeatmapPoint> heatmap
+ int total,@JsonKey(name: 'por_dia_semana') List<DayOfWeekStat> porDiaSemana,@JsonKey(name: 'por_hora') List<HourStat> porHora, List<HeatmapPoint> heatmap
 });
 
 
@@ -162,7 +162,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int total,  List<DayOfWeekStat> porDiaSemana,  List<HourStat> porHora,  List<HeatmapPoint> heatmap)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int total, @JsonKey(name: 'por_dia_semana')  List<DayOfWeekStat> porDiaSemana, @JsonKey(name: 'por_hora')  List<HourStat> porHora,  List<HeatmapPoint> heatmap)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _DashboardActividad() when $default != null:
 return $default(_that.total,_that.porDiaSemana,_that.porHora,_that.heatmap);case _:
@@ -183,7 +183,7 @@ return $default(_that.total,_that.porDiaSemana,_that.porHora,_that.heatmap);case
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int total,  List<DayOfWeekStat> porDiaSemana,  List<HourStat> porHora,  List<HeatmapPoint> heatmap)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int total, @JsonKey(name: 'por_dia_semana')  List<DayOfWeekStat> porDiaSemana, @JsonKey(name: 'por_hora')  List<HourStat> porHora,  List<HeatmapPoint> heatmap)  $default,) {final _that = this;
 switch (_that) {
 case _DashboardActividad():
 return $default(_that.total,_that.porDiaSemana,_that.porHora,_that.heatmap);case _:
@@ -203,7 +203,7 @@ return $default(_that.total,_that.porDiaSemana,_that.porHora,_that.heatmap);case
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int total,  List<DayOfWeekStat> porDiaSemana,  List<HourStat> porHora,  List<HeatmapPoint> heatmap)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int total, @JsonKey(name: 'por_dia_semana')  List<DayOfWeekStat> porDiaSemana, @JsonKey(name: 'por_hora')  List<HourStat> porHora,  List<HeatmapPoint> heatmap)?  $default,) {final _that = this;
 switch (_that) {
 case _DashboardActividad() when $default != null:
 return $default(_that.total,_that.porDiaSemana,_that.porHora,_that.heatmap);case _:
@@ -218,19 +218,19 @@ return $default(_that.total,_that.porDiaSemana,_that.porHora,_that.heatmap);case
 @JsonSerializable()
 
 class _DashboardActividad implements DashboardActividad {
-  const _DashboardActividad({this.total = 0,  List<DayOfWeekStat> porDiaSemana = const [],  List<HourStat> porHora = const [],  List<HeatmapPoint> heatmap = const []}): _porDiaSemana = porDiaSemana,_porHora = porHora,_heatmap = heatmap;
+  const _DashboardActividad({this.total = 0, @JsonKey(name: 'por_dia_semana')  List<DayOfWeekStat> porDiaSemana = const [], @JsonKey(name: 'por_hora')  List<HourStat> porHora = const [],  List<HeatmapPoint> heatmap = const []}): _porDiaSemana = porDiaSemana,_porHora = porHora,_heatmap = heatmap;
   factory _DashboardActividad.fromJson(Map<String, dynamic> json) => _$DashboardActividadFromJson(json);
 
 @override@JsonKey() final  int total;
  final  List<DayOfWeekStat> _porDiaSemana;
-@override@JsonKey() List<DayOfWeekStat> get porDiaSemana {
+@override@JsonKey(name: 'por_dia_semana') List<DayOfWeekStat> get porDiaSemana {
   if (_porDiaSemana is EqualUnmodifiableListView) return _porDiaSemana;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_porDiaSemana);
 }
 
  final  List<HourStat> _porHora;
-@override@JsonKey() List<HourStat> get porHora {
+@override@JsonKey(name: 'por_hora') List<HourStat> get porHora {
   if (_porHora is EqualUnmodifiableListView) return _porHora;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_porHora);
@@ -279,7 +279,7 @@ abstract mixin class _$DashboardActividadCopyWith<$Res> implements $DashboardAct
   factory _$DashboardActividadCopyWith(_DashboardActividad value, $Res Function(_DashboardActividad) _then) = __$DashboardActividadCopyWithImpl;
 @override @useResult
 $Res call({
- int total, List<DayOfWeekStat> porDiaSemana, List<HourStat> porHora, List<HeatmapPoint> heatmap
+ int total,@JsonKey(name: 'por_dia_semana') List<DayOfWeekStat> porDiaSemana,@JsonKey(name: 'por_hora') List<HourStat> porHora, List<HeatmapPoint> heatmap
 });
 
 

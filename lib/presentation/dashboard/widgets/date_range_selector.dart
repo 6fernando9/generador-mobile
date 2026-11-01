@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/presentation/dashboard/dashboard_providers.dart';
-import 'package:mobile/presentation/shared/widgets/neon_card.dart';
 import 'package:mobile/core/theme/neon_colors.dart';
 
 /// Date range selector with icon support and fallback
@@ -21,7 +20,6 @@ class DateRangeSelector extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedRange = ref.watch(dateRangeProvider);
     final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,7 +49,7 @@ class DateRangeSelector extends ConsumerWidget {
                   preset: preset,
                   isSelected: isSelected,
                   compact: compact,
-                  onTap: () => ref.read(dateRangeProvider.notifier).setPreset(preset),
+                  onTap: () => _seleccionarPreset(context, ref, preset),
                 ),
               );
             }).toList(),
@@ -60,6 +58,36 @@ class DateRangeSelector extends ConsumerWidget {
       ],
     );
   }
+}
+
+/// Applies a preset. For `custom` it opens the native range picker first.
+Future<void> _seleccionarPreset(
+  BuildContext context,
+  WidgetRef ref,
+  DateRangePreset preset,
+) async {
+  if (preset == DateRangePreset.custom) {
+    final now = DateTime.now();
+    final actual =
+        ref.read(customDateRangeProvider) ??
+        DateTimeRange(start: now.subtract(const Duration(days: 29)), end: now);
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: now,
+      initialDateRange: actual,
+      helpText: 'Selecciona el rango',
+      cancelText: 'Cancelar',
+      confirmText: 'Aplicar',
+      saveText: 'Aplicar',
+      fieldStartLabelText: 'Desde',
+      fieldEndLabelText: 'Hasta',
+    );
+    if (picked != null) {
+      ref.read(customDateRangeProvider.notifier).setRange(picked);
+    }
+  }
+  ref.read(dateRangeProvider.notifier).setPreset(preset);
 }
 
 /// Individual date range chip with icon fallback
@@ -86,6 +114,7 @@ class _DateRangeChip extends StatelessWidget {
       DateRangePreset.today => NeonColors.getNeon('cyan', isDark),
       DateRangePreset.week => NeonColors.getNeon('magenta', isDark),
       DateRangePreset.month => NeonColors.getNeon('purple', isDark),
+      DateRangePreset.last30 => NeonColors.getNeon('cyan', isDark),
       DateRangePreset.quarter => NeonColors.getNeon('blue', isDark),
       DateRangePreset.year => NeonColors.getNeon('green', isDark),
       DateRangePreset.custom => NeonColors.getNeon('orange', isDark),
@@ -116,7 +145,9 @@ class _DateRangeChip extends StatelessWidget {
                     ],
                   )
                 : null,
-            color: isSelected ? null : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+            color: isSelected
+                ? null
+                : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
             border: Border.all(
               color: isSelected
                   ? primaryColor.withValues(alpha: 0.5)
@@ -140,7 +171,9 @@ class _DateRangeChip extends StatelessWidget {
               _IconWithFallback(
                 icon: preset.icon,
                 size: compact ? 16 : 18,
-                color: isSelected ? primaryColor : colorScheme.onSurface.withValues(alpha: 0.6),
+                color: isSelected
+                    ? primaryColor
+                    : colorScheme.onSurface.withValues(alpha: 0.6),
               ),
               if (!compact) const SizedBox(width: 8),
               // Label
@@ -150,7 +183,9 @@ class _DateRangeChip extends StatelessWidget {
                   style: GoogleFonts.spaceGrotesk(
                     fontSize: 13,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: isSelected ? primaryColor : colorScheme.onSurface.withValues(alpha: 0.8),
+                    color: isSelected
+                        ? primaryColor
+                        : colorScheme.onSurface.withValues(alpha: 0.8),
                   ),
                 ),
             ],
@@ -178,11 +213,7 @@ class _IconWithFallback extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Try to render the icon, if it fails (throws), show fallback
-    return Icon(
-      icon,
-      size: size,
-      color: color,
-    );
+    return Icon(icon, size: size, color: color);
   }
 }
 
@@ -196,7 +227,6 @@ class DateRangeSelectorPopup extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedRange = ref.watch(dateRangeProvider);
     final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,7 +249,7 @@ class DateRangeSelectorPopup extends ConsumerWidget {
           color: Colors.transparent,
           child: PopupMenuButton<DateRangePreset>(
             initialValue: selectedRange,
-            onSelected: (value) => ref.read(dateRangeProvider.notifier).setPreset(value),
+            onSelected: (value) => _seleccionarPreset(context, ref, value),
             itemBuilder: (context) => DateRangePreset.values.map((preset) {
               return PopupMenuItem<DateRangePreset>(
                 value: preset,
@@ -245,7 +275,9 @@ class DateRangeSelectorPopup extends ConsumerWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                color: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.5,
+                ),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: colorScheme.outlineVariant.withValues(alpha: 0.3),

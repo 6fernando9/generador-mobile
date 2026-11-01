@@ -8,8 +8,10 @@ part 'dashboard_actividad.g.dart';
 abstract class DashboardActividad with _$DashboardActividad {
   const factory DashboardActividad({
     @Default(0) int total,
-    @Default([]) List<DayOfWeekStat> porDiaSemana,
-    @Default([]) List<HourStat> porHora,
+    @JsonKey(name: 'por_dia_semana')
+    @Default([])
+    List<DayOfWeekStat> porDiaSemana,
+    @JsonKey(name: 'por_hora') @Default([]) List<HourStat> porHora,
     @Default([]) List<HeatmapPoint> heatmap,
   }) = _DashboardActividad;
 
@@ -31,10 +33,8 @@ abstract class DayOfWeekStat with _$DayOfWeekStat {
 
 @freezed
 abstract class HourStat with _$HourStat {
-  const factory HourStat({
-    @Default(0) int hora,
-    @Default(0) int total,
-  }) = _HourStat;
+  const factory HourStat({@Default(0) int hora, @Default(0) int total}) =
+      _HourStat;
 
   factory HourStat.fromJson(Map<String, dynamic> json) =>
       _$HourStatFromJson(json);

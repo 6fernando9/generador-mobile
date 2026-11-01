@@ -3,21 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:mobile/core/theme/neon_colors.dart';
-import 'package:mobile/core/utils/responsive.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/presentation/shared/widgets/neon_background.dart';
 import 'package:mobile/presentation/shared/widgets/neon_button.dart';
 import 'package:mobile/presentation/shared/widgets/neon_card.dart'
     show GlowCard, NeonBadge, NeonBadgeStyle;
 import 'package:mobile/presentation/shared/widgets/skeleton_base.dart'
-    show SkeletonBase, SkeletonBox, SkeletonText;
+    show SkeletonBase;
 import 'package:mobile/presentation/shared/theme/theme_switcher.dart';
 import 'package:mobile/presentation/dashboard/widgets/download_history_list.dart';
 import 'package:mobile/presentation/dashboard/widgets/membership_history_list.dart';
 import 'package:mobile/presentation/dashboard/widgets/date_range_selector.dart';
 import 'package:mobile/presentation/dashboard/widgets/kpi_card_row.dart';
 import 'package:mobile/presentation/dashboard/widgets/charts/neon_line_chart.dart';
-import 'package:mobile/presentation/dashboard/widgets/charts/neon_donut_chart.dart';
+import 'package:mobile/presentation/dashboard/widgets/tecnologias_section.dart';
 import 'package:mobile/presentation/dashboard/widgets/charts/neon_heatmap.dart';
 import 'package:mobile/presentation/dashboard/widgets/project_ranking_list.dart';
 import 'package:mobile/presentation/dashboard/dashboard_providers.dart';
@@ -124,7 +123,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
     // Watch providers
     final resumenAsync = ref.watch(dashboardResumenAutoProvider);
     final tendenciaAsync = ref.watch(dashboardTendenciaAutoProvider);
-    final tecnologiasAsync = ref.watch(dashboardTecnologiasProvider);
     final actividadAsync = ref.watch(dashboardActividadAutoProvider);
     final proyectosAsync = ref.watch(dashboardProyectosProvider);
 
@@ -132,7 +130,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
       onRefresh: () async {
         ref.invalidate(dashboardResumenAutoProvider);
         ref.invalidate(dashboardTendenciaAutoProvider);
-        ref.invalidate(dashboardTecnologiasProvider);
+        ref.invalidate(dashboardTecnologiasAutoProvider);
+        ref.invalidate(dashboardCatalogosProvider);
         ref.invalidate(dashboardActividadAutoProvider);
         ref.invalidate(dashboardProyectosProvider);
         await Future.delayed(const Duration(milliseconds: 500));
@@ -193,7 +192,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
 
           const SizedBox(height: 32),
 
-          // Tecnologías Grid
+          // Tecnologías: card con tabs Total / Proyecto / Reporte
           Animate(
             effects: [
               FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 400)),
@@ -210,11 +209,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
             effects: [
               FadeEffect(duration: 400.ms, delay: Duration(milliseconds: 500)),
             ],
-            child: tecnologiasAsync.when(
-              data: (tecnologias) => NeonDonutGrid(data: tecnologias),
-              loading: () => _buildDonutGridSkeleton(context),
-              error: (e, _) => _buildChartError(context, e.toString()),
-            ),
+            child: const TecnologiasSection(),
           ),
 
           const SizedBox(height: 32),
@@ -530,39 +525,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
     );
   }
 
-  Widget _buildDonutGridSkeleton(BuildContext context) {
-    // Mirror NeonDonutGrid sizing via the shared DonutGridMetrics helper.
-    final deviceType = Responsive.deviceType(context);
-    final showLegend = deviceType == DeviceType.desktop ||
-        deviceType == DeviceType.largeDesktop;
-
-    // The dashboard ListView pads its children by 16px on each side, which is
-    // exactly what NeonDonutGrid receives through its LayoutBuilder.
-    final metrics = DonutGridMetrics.compute(
-      MediaQuery.sizeOf(context).width - 32,
-      showLegend: showLegend,
-      fontScale: Responsive.fontScale(context),
-    );
-
-    return SizedBox(
-      height: metrics.gridHeight(6),
-      child: GridView.builder(
-        physics: const NeverScrollableScrollPhysics(),
-        shrinkWrap: true,
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: metrics.crossAxisCount,
-          childAspectRatio: metrics.aspectRatio,
-          crossAxisSpacing: DonutGridMetrics.spacing,
-          mainAxisSpacing: DonutGridMetrics.spacing,
-        ),
-        itemCount: 6,
-        itemBuilder: (context, index) => SkeletonBase(
-          child: _DonutSkeletonContent(chartSize: metrics.chartSize),
-        ),
-      ),
-    );
-  }
-
   Widget _buildChartError(BuildContext context, String error) {
     final colorScheme = Theme.of(context).colorScheme;
     return Center(
@@ -602,46 +564,14 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                 // Refresh all providers
                 ref.invalidate(dashboardResumenAutoProvider);
                 ref.invalidate(dashboardTendenciaAutoProvider);
-                ref.invalidate(dashboardTecnologiasProvider);
+                ref.invalidate(dashboardTecnologiasAutoProvider);
+                ref.invalidate(dashboardCatalogosProvider);
                 ref.invalidate(dashboardActividadAutoProvider);
                 ref.invalidate(dashboardProyectosProvider);
               },
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _DonutSkeletonContent extends StatelessWidget {
-  final double chartSize;
-
-  const _DonutSkeletonContent({this.chartSize = 120});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).dividerColor, width: 1),
-      ),
-      child: Column(
-        children: [
-          SkeletonText(width: 80, height: 14),
-          const SizedBox(height: 12),
-          Expanded(
-            child: Center(
-              child: SkeletonBox(
-                width: chartSize,
-                height: chartSize,
-                borderRadius: chartSize / 2,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

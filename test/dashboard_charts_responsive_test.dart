@@ -4,24 +4,28 @@
 // ("A RenderFlex overflowed by ... pixels") occurs, so these tests double as
 // an overflow guard across phone, tablet and desktop sizes.
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:mobile/data/models/dashboard_catalogos.dart';
 import 'package:mobile/data/models/dashboard_tecnologias.dart';
 import 'package:mobile/data/models/dashboard_tendencia.dart';
+import 'package:mobile/presentation/dashboard/dashboard_providers.dart';
 import 'package:mobile/presentation/dashboard/widgets/charts/neon_donut_chart.dart';
 import 'package:mobile/presentation/dashboard/widgets/charts/neon_line_chart.dart';
+import 'package:mobile/presentation/dashboard/widgets/tecnologias_section.dart';
 
 DashboardTecnologias _tecnologias() {
   List<TechItem> items(int n) => List.generate(
-        n,
-        (i) => TechItem(
-          id: i,
-          nombre: 'Tecnología $i',
-          nombreCode: 'tech_$i',
-          total: 50 - i * 5,
-          porcentaje: 20.0 - i * 3,
-        ),
-      );
+    n,
+    (i) => TechItem(
+      id: i,
+      nombre: 'Tecnología $i',
+      nombreCode: 'tech_$i',
+      total: 50 - i * 5,
+      porcentaje: 20.0 - i * 3,
+    ),
+  );
 
   return DashboardTecnologias(
     total: 100,
@@ -43,9 +47,12 @@ DashboardTendencia _tendencia() {
       (i) => TimeSeriesPoint(
         periodo: DateTime(2026, 1, 1 + i).toIso8601String(),
         total: 10 + i,
-        backend: 4 + i ~/ 2,
-        frontend: 3 + i ~/ 3,
-        mobile: 2 + i ~/ 4,
+        porTipo: {
+          'backend': 4 + i ~/ 2,
+          'frontend': 3 + i ~/ 3,
+          'mobile': 2 + i ~/ 4,
+          'reporte': 1 + i ~/ 5,
+        },
       ),
     ),
   );
@@ -63,7 +70,11 @@ const List<Size> _sizes = <Size>[
   Size(1600, 1000), // large desktop
 ];
 
-Future<void> _pumpAtSize(WidgetTester tester, Size logicalSize, Widget child) async {
+Future<void> _pumpAtSize(
+  WidgetTester tester,
+  Size logicalSize,
+  Widget child,
+) async {
   tester.view.physicalSize = logicalSize;
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
@@ -72,10 +83,7 @@ Future<void> _pumpAtSize(WidgetTester tester, Size logicalSize, Widget child) as
   await tester.pumpWidget(
     MaterialApp(
       home: Scaffold(
-        body: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [child],
-        ),
+        body: ListView(padding: const EdgeInsets.all(16), children: [child]),
       ),
     ),
   );
@@ -83,8 +91,9 @@ Future<void> _pumpAtSize(WidgetTester tester, Size logicalSize, Widget child) as
 }
 
 void main() {
-  testWidgets('NeonDonutGrid fits without overflow at multiple sizes',
-      (tester) async {
+  testWidgets('NeonDonutGrid fits without overflow at multiple sizes', (
+    tester,
+  ) async {
     for (final size in _sizes) {
       await _pumpAtSize(tester, size, NeonDonutGrid(data: _tecnologias()));
       expect(
@@ -95,14 +104,59 @@ void main() {
     }
   });
 
-  testWidgets('NeonLineChart fits without overflow at multiple sizes',
-      (tester) async {
+  testWidgets('NeonLineChart fits without overflow at multiple sizes', (
+    tester,
+  ) async {
     for (final size in _sizes) {
       await _pumpAtSize(tester, size, NeonLineChart(data: _tendencia()));
       expect(
         tester.takeException(),
         isNull,
         reason: 'NeonLineChart overflowed at logical size $size',
+      );
+    }
+  });
+
+  testWidgets('TecnologiasSection fits without overflow at multiple sizes', (
+    tester,
+  ) async {
+    final data = _tecnologias();
+    final catalog = DashboardCatalogos(
+      lenguajes: data.lenguajes,
+      frameworks: data.frameworks,
+      arquitecturas: data.arquitecturas,
+      orms: data.orms,
+      basesDatos: data.basesDatos,
+      tiposArtefacto: data.tiposArtefacto,
+    );
+
+    for (final size in _sizes) {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            dashboardTecnologiasAutoProvider.overrideWith((ref) async => data),
+            dashboardCatalogosProvider.overrideWith((ref) async => catalog),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: ListView(
+                padding: const EdgeInsets.all(16),
+                children: const [TecnologiasSection()],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'TecnologiasSection overflowed at logical size $size',
       );
     }
   });

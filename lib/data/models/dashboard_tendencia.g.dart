@@ -32,16 +32,16 @@ _TimeSeriesPoint _$TimeSeriesPointFromJson(Map<String, dynamic> json) =>
     _TimeSeriesPoint(
       periodo: json['periodo'] as String? ?? '',
       total: (json['total'] as num?)?.toInt() ?? 0,
-      backend: (json['backend'] as num?)?.toInt() ?? 0,
-      frontend: (json['frontend'] as num?)?.toInt() ?? 0,
-      mobile: (json['mobile'] as num?)?.toInt() ?? 0,
+      porTipo:
+          (json['porTipo'] as Map<String, dynamic>?)?.map(
+            (k, e) => MapEntry(k, (e as num).toInt()),
+          ) ??
+          const <String, int>{},
     );
 
 Map<String, dynamic> _$TimeSeriesPointToJson(_TimeSeriesPoint instance) =>
     <String, dynamic>{
       'periodo': instance.periodo,
       'total': instance.total,
-      'backend': instance.backend,
-      'frontend': instance.frontend,
-      'mobile': instance.mobile,
+      'porTipo': instance.porTipo,
     };

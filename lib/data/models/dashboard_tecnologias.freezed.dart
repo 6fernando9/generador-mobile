@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$DashboardTecnologias {
 
- int get total; List<TechItem> get lenguajes; List<TechItem> get frameworks; List<TechItem> get arquitecturas; List<TechItem> get orms; List<TechItem> get basesDatos; List<TechItem> get tiposArtefacto;
+ int get total; List<TechItem> get lenguajes; List<TechItem> get frameworks; List<TechItem> get arquitecturas; List<TechItem> get orms;@JsonKey(name: 'bases_datos') List<TechItem> get basesDatos;@JsonKey(name: 'tipos_artefacto') List<TechItem> get tiposArtefacto;@JsonKey(name: 'tipos_reporte') List<TechItem> get tiposReporte;@JsonKey(name: 'tipos_xml') List<TechItem> get tiposXml;
 /// Create a copy of DashboardTecnologias
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -30,20 +30,20 @@ $DashboardTecnologiasCopyWith<DashboardTecnologias> get copyWith => _$DashboardT
 @override
 bool operator ==(Object other) {
   final _this = this as DashboardTecnologias;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DashboardTecnologias&&(identical(other.total, _this.total) || other.total == _this.total)&&const DeepCollectionEquality().equals(other.lenguajes, _this.lenguajes)&&const DeepCollectionEquality().equals(other.frameworks, _this.frameworks)&&const DeepCollectionEquality().equals(other.arquitecturas, _this.arquitecturas)&&const DeepCollectionEquality().equals(other.orms, _this.orms)&&const DeepCollectionEquality().equals(other.basesDatos, _this.basesDatos)&&const DeepCollectionEquality().equals(other.tiposArtefacto, _this.tiposArtefacto));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DashboardTecnologias&&(identical(other.total, _this.total) || other.total == _this.total)&&const DeepCollectionEquality().equals(other.lenguajes, _this.lenguajes)&&const DeepCollectionEquality().equals(other.frameworks, _this.frameworks)&&const DeepCollectionEquality().equals(other.arquitecturas, _this.arquitecturas)&&const DeepCollectionEquality().equals(other.orms, _this.orms)&&const DeepCollectionEquality().equals(other.basesDatos, _this.basesDatos)&&const DeepCollectionEquality().equals(other.tiposArtefacto, _this.tiposArtefacto)&&const DeepCollectionEquality().equals(other.tiposReporte, _this.tiposReporte)&&const DeepCollectionEquality().equals(other.tiposXml, _this.tiposXml));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as DashboardTecnologias;
-  return Object.hash(runtimeType,_this.total,const DeepCollectionEquality().hash(_this.lenguajes),const DeepCollectionEquality().hash(_this.frameworks),const DeepCollectionEquality().hash(_this.arquitecturas),const DeepCollectionEquality().hash(_this.orms),const DeepCollectionEquality().hash(_this.basesDatos),const DeepCollectionEquality().hash(_this.tiposArtefacto));
+  return Object.hash(runtimeType,_this.total,const DeepCollectionEquality().hash(_this.lenguajes),const DeepCollectionEquality().hash(_this.frameworks),const DeepCollectionEquality().hash(_this.arquitecturas),const DeepCollectionEquality().hash(_this.orms),const DeepCollectionEquality().hash(_this.basesDatos),const DeepCollectionEquality().hash(_this.tiposArtefacto),const DeepCollectionEquality().hash(_this.tiposReporte),const DeepCollectionEquality().hash(_this.tiposXml));
 }
 
 @override
 String toString() {
   final _this = this as DashboardTecnologias;
-  return 'DashboardTecnologias(total: ${_this.total}, lenguajes: ${_this.lenguajes}, frameworks: ${_this.frameworks}, arquitecturas: ${_this.arquitecturas}, orms: ${_this.orms}, basesDatos: ${_this.basesDatos}, tiposArtefacto: ${_this.tiposArtefacto})';
+  return 'DashboardTecnologias(total: ${_this.total}, lenguajes: ${_this.lenguajes}, frameworks: ${_this.frameworks}, arquitecturas: ${_this.arquitecturas}, orms: ${_this.orms}, basesDatos: ${_this.basesDatos}, tiposArtefacto: ${_this.tiposArtefacto}, tiposReporte: ${_this.tiposReporte}, tiposXml: ${_this.tiposXml})';
 }
 
 
@@ -54,7 +54,7 @@ abstract mixin class $DashboardTecnologiasCopyWith<$Res>  {
   factory $DashboardTecnologiasCopyWith(DashboardTecnologias value, $Res Function(DashboardTecnologias) _then) = _$DashboardTecnologiasCopyWithImpl;
 @useResult
 $Res call({
- int total, List<TechItem> lenguajes, List<TechItem> frameworks, List<TechItem> arquitecturas, List<TechItem> orms, List<TechItem> basesDatos, List<TechItem> tiposArtefacto
+ int total, List<TechItem> lenguajes, List<TechItem> frameworks, List<TechItem> arquitecturas, List<TechItem> orms,@JsonKey(name: 'bases_datos') List<TechItem> basesDatos,@JsonKey(name: 'tipos_artefacto') List<TechItem> tiposArtefacto,@JsonKey(name: 'tipos_reporte') List<TechItem> tiposReporte,@JsonKey(name: 'tipos_xml') List<TechItem> tiposXml
 });
 
 
@@ -71,7 +71,7 @@ class _$DashboardTecnologiasCopyWithImpl<$Res>
 
 /// Create a copy of DashboardTecnologias
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? total = null,Object? lenguajes = null,Object? frameworks = null,Object? arquitecturas = null,Object? orms = null,Object? basesDatos = null,Object? tiposArtefacto = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? total = null,Object? lenguajes = null,Object? frameworks = null,Object? arquitecturas = null,Object? orms = null,Object? basesDatos = null,Object? tiposArtefacto = null,Object? tiposReporte = null,Object? tiposXml = null,}) {
   return _then(DashboardTecnologias(
 total: null == total ? _self.total : total // ignore: cast_nullable_to_non_nullable
 as int,lenguajes: null == lenguajes ? _self.lenguajes : lenguajes // ignore: cast_nullable_to_non_nullable
@@ -80,6 +80,8 @@ as List<TechItem>,arquitecturas: null == arquitecturas ? _self.arquitecturas : a
 as List<TechItem>,orms: null == orms ? _self.orms : orms // ignore: cast_nullable_to_non_nullable
 as List<TechItem>,basesDatos: null == basesDatos ? _self.basesDatos : basesDatos // ignore: cast_nullable_to_non_nullable
 as List<TechItem>,tiposArtefacto: null == tiposArtefacto ? _self.tiposArtefacto : tiposArtefacto // ignore: cast_nullable_to_non_nullable
+as List<TechItem>,tiposReporte: null == tiposReporte ? _self.tiposReporte : tiposReporte // ignore: cast_nullable_to_non_nullable
+as List<TechItem>,tiposXml: null == tiposXml ? _self.tiposXml : tiposXml // ignore: cast_nullable_to_non_nullable
 as List<TechItem>,
   ));
 }
@@ -165,10 +167,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int total,  List<TechItem> lenguajes,  List<TechItem> frameworks,  List<TechItem> arquitecturas,  List<TechItem> orms,  List<TechItem> basesDatos,  List<TechItem> tiposArtefacto)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int total,  List<TechItem> lenguajes,  List<TechItem> frameworks,  List<TechItem> arquitecturas,  List<TechItem> orms, @JsonKey(name: 'bases_datos')  List<TechItem> basesDatos, @JsonKey(name: 'tipos_artefacto')  List<TechItem> tiposArtefacto, @JsonKey(name: 'tipos_reporte')  List<TechItem> tiposReporte, @JsonKey(name: 'tipos_xml')  List<TechItem> tiposXml)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _DashboardTecnologias() when $default != null:
-return $default(_that.total,_that.lenguajes,_that.frameworks,_that.arquitecturas,_that.orms,_that.basesDatos,_that.tiposArtefacto);case _:
+return $default(_that.total,_that.lenguajes,_that.frameworks,_that.arquitecturas,_that.orms,_that.basesDatos,_that.tiposArtefacto,_that.tiposReporte,_that.tiposXml);case _:
   return orElse();
 
 }
@@ -186,10 +188,10 @@ return $default(_that.total,_that.lenguajes,_that.frameworks,_that.arquitecturas
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int total,  List<TechItem> lenguajes,  List<TechItem> frameworks,  List<TechItem> arquitecturas,  List<TechItem> orms,  List<TechItem> basesDatos,  List<TechItem> tiposArtefacto)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int total,  List<TechItem> lenguajes,  List<TechItem> frameworks,  List<TechItem> arquitecturas,  List<TechItem> orms, @JsonKey(name: 'bases_datos')  List<TechItem> basesDatos, @JsonKey(name: 'tipos_artefacto')  List<TechItem> tiposArtefacto, @JsonKey(name: 'tipos_reporte')  List<TechItem> tiposReporte, @JsonKey(name: 'tipos_xml')  List<TechItem> tiposXml)  $default,) {final _that = this;
 switch (_that) {
 case _DashboardTecnologias():
-return $default(_that.total,_that.lenguajes,_that.frameworks,_that.arquitecturas,_that.orms,_that.basesDatos,_that.tiposArtefacto);case _:
+return $default(_that.total,_that.lenguajes,_that.frameworks,_that.arquitecturas,_that.orms,_that.basesDatos,_that.tiposArtefacto,_that.tiposReporte,_that.tiposXml);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -206,10 +208,10 @@ return $default(_that.total,_that.lenguajes,_that.frameworks,_that.arquitecturas
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int total,  List<TechItem> lenguajes,  List<TechItem> frameworks,  List<TechItem> arquitecturas,  List<TechItem> orms,  List<TechItem> basesDatos,  List<TechItem> tiposArtefacto)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int total,  List<TechItem> lenguajes,  List<TechItem> frameworks,  List<TechItem> arquitecturas,  List<TechItem> orms, @JsonKey(name: 'bases_datos')  List<TechItem> basesDatos, @JsonKey(name: 'tipos_artefacto')  List<TechItem> tiposArtefacto, @JsonKey(name: 'tipos_reporte')  List<TechItem> tiposReporte, @JsonKey(name: 'tipos_xml')  List<TechItem> tiposXml)?  $default,) {final _that = this;
 switch (_that) {
 case _DashboardTecnologias() when $default != null:
-return $default(_that.total,_that.lenguajes,_that.frameworks,_that.arquitecturas,_that.orms,_that.basesDatos,_that.tiposArtefacto);case _:
+return $default(_that.total,_that.lenguajes,_that.frameworks,_that.arquitecturas,_that.orms,_that.basesDatos,_that.tiposArtefacto,_that.tiposReporte,_that.tiposXml);case _:
   return null;
 
 }
@@ -221,7 +223,7 @@ return $default(_that.total,_that.lenguajes,_that.frameworks,_that.arquitecturas
 @JsonSerializable()
 
 class _DashboardTecnologias implements DashboardTecnologias {
-  const _DashboardTecnologias({this.total = 0,  List<TechItem> lenguajes = const [],  List<TechItem> frameworks = const [],  List<TechItem> arquitecturas = const [],  List<TechItem> orms = const [],  List<TechItem> basesDatos = const [],  List<TechItem> tiposArtefacto = const []}): _lenguajes = lenguajes,_frameworks = frameworks,_arquitecturas = arquitecturas,_orms = orms,_basesDatos = basesDatos,_tiposArtefacto = tiposArtefacto;
+  const _DashboardTecnologias({this.total = 0,  List<TechItem> lenguajes = const [],  List<TechItem> frameworks = const [],  List<TechItem> arquitecturas = const [],  List<TechItem> orms = const [], @JsonKey(name: 'bases_datos')  List<TechItem> basesDatos = const [], @JsonKey(name: 'tipos_artefacto')  List<TechItem> tiposArtefacto = const [], @JsonKey(name: 'tipos_reporte')  List<TechItem> tiposReporte = const [], @JsonKey(name: 'tipos_xml')  List<TechItem> tiposXml = const []}): _lenguajes = lenguajes,_frameworks = frameworks,_arquitecturas = arquitecturas,_orms = orms,_basesDatos = basesDatos,_tiposArtefacto = tiposArtefacto,_tiposReporte = tiposReporte,_tiposXml = tiposXml;
   factory _DashboardTecnologias.fromJson(Map<String, dynamic> json) => _$DashboardTecnologiasFromJson(json);
 
 @override@JsonKey() final  int total;
@@ -254,17 +256,31 @@ class _DashboardTecnologias implements DashboardTecnologias {
 }
 
  final  List<TechItem> _basesDatos;
-@override@JsonKey() List<TechItem> get basesDatos {
+@override@JsonKey(name: 'bases_datos') List<TechItem> get basesDatos {
   if (_basesDatos is EqualUnmodifiableListView) return _basesDatos;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_basesDatos);
 }
 
  final  List<TechItem> _tiposArtefacto;
-@override@JsonKey() List<TechItem> get tiposArtefacto {
+@override@JsonKey(name: 'tipos_artefacto') List<TechItem> get tiposArtefacto {
   if (_tiposArtefacto is EqualUnmodifiableListView) return _tiposArtefacto;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_tiposArtefacto);
+}
+
+ final  List<TechItem> _tiposReporte;
+@override@JsonKey(name: 'tipos_reporte') List<TechItem> get tiposReporte {
+  if (_tiposReporte is EqualUnmodifiableListView) return _tiposReporte;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_tiposReporte);
+}
+
+ final  List<TechItem> _tiposXml;
+@override@JsonKey(name: 'tipos_xml') List<TechItem> get tiposXml {
+  if (_tiposXml is EqualUnmodifiableListView) return _tiposXml;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_tiposXml);
 }
 
 
@@ -281,18 +297,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _DashboardTecnologias&&(identical(other.total, total) || other.total == total)&&const DeepCollectionEquality().equals(other.lenguajes, _lenguajes)&&const DeepCollectionEquality().equals(other.frameworks, _frameworks)&&const DeepCollectionEquality().equals(other.arquitecturas, _arquitecturas)&&const DeepCollectionEquality().equals(other.orms, _orms)&&const DeepCollectionEquality().equals(other.basesDatos, _basesDatos)&&const DeepCollectionEquality().equals(other.tiposArtefacto, _tiposArtefacto));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _DashboardTecnologias&&(identical(other.total, total) || other.total == total)&&const DeepCollectionEquality().equals(other.lenguajes, _lenguajes)&&const DeepCollectionEquality().equals(other.frameworks, _frameworks)&&const DeepCollectionEquality().equals(other.arquitecturas, _arquitecturas)&&const DeepCollectionEquality().equals(other.orms, _orms)&&const DeepCollectionEquality().equals(other.basesDatos, _basesDatos)&&const DeepCollectionEquality().equals(other.tiposArtefacto, _tiposArtefacto)&&const DeepCollectionEquality().equals(other.tiposReporte, _tiposReporte)&&const DeepCollectionEquality().equals(other.tiposXml, _tiposXml));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,total,const DeepCollectionEquality().hash(_lenguajes),const DeepCollectionEquality().hash(_frameworks),const DeepCollectionEquality().hash(_arquitecturas),const DeepCollectionEquality().hash(_orms),const DeepCollectionEquality().hash(_basesDatos),const DeepCollectionEquality().hash(_tiposArtefacto));
+    return Object.hash(runtimeType,total,const DeepCollectionEquality().hash(_lenguajes),const DeepCollectionEquality().hash(_frameworks),const DeepCollectionEquality().hash(_arquitecturas),const DeepCollectionEquality().hash(_orms),const DeepCollectionEquality().hash(_basesDatos),const DeepCollectionEquality().hash(_tiposArtefacto),const DeepCollectionEquality().hash(_tiposReporte),const DeepCollectionEquality().hash(_tiposXml));
 }
 
 @override
 String toString() {
-    return 'DashboardTecnologias(total: $total, lenguajes: $lenguajes, frameworks: $frameworks, arquitecturas: $arquitecturas, orms: $orms, basesDatos: $basesDatos, tiposArtefacto: $tiposArtefacto)';
+    return 'DashboardTecnologias(total: $total, lenguajes: $lenguajes, frameworks: $frameworks, arquitecturas: $arquitecturas, orms: $orms, basesDatos: $basesDatos, tiposArtefacto: $tiposArtefacto, tiposReporte: $tiposReporte, tiposXml: $tiposXml)';
 }
 
 
@@ -303,7 +319,7 @@ abstract mixin class _$DashboardTecnologiasCopyWith<$Res> implements $DashboardT
   factory _$DashboardTecnologiasCopyWith(_DashboardTecnologias value, $Res Function(_DashboardTecnologias) _then) = __$DashboardTecnologiasCopyWithImpl;
 @override @useResult
 $Res call({
- int total, List<TechItem> lenguajes, List<TechItem> frameworks, List<TechItem> arquitecturas, List<TechItem> orms, List<TechItem> basesDatos, List<TechItem> tiposArtefacto
+ int total, List<TechItem> lenguajes, List<TechItem> frameworks, List<TechItem> arquitecturas, List<TechItem> orms,@JsonKey(name: 'bases_datos') List<TechItem> basesDatos,@JsonKey(name: 'tipos_artefacto') List<TechItem> tiposArtefacto,@JsonKey(name: 'tipos_reporte') List<TechItem> tiposReporte,@JsonKey(name: 'tipos_xml') List<TechItem> tiposXml
 });
 
 
@@ -320,7 +336,7 @@ class __$DashboardTecnologiasCopyWithImpl<$Res>
 
 /// Create a copy of DashboardTecnologias
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? total = null,Object? lenguajes = null,Object? frameworks = null,Object? arquitecturas = null,Object? orms = null,Object? basesDatos = null,Object? tiposArtefacto = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? total = null,Object? lenguajes = null,Object? frameworks = null,Object? arquitecturas = null,Object? orms = null,Object? basesDatos = null,Object? tiposArtefacto = null,Object? tiposReporte = null,Object? tiposXml = null,}) {
   return _then(_DashboardTecnologias(
 total: null == total ? _self.total : total // ignore: cast_nullable_to_non_nullable
 as int,lenguajes: null == lenguajes ? _self._lenguajes : lenguajes // ignore: cast_nullable_to_non_nullable
@@ -329,6 +345,8 @@ as List<TechItem>,arquitecturas: null == arquitecturas ? _self._arquitecturas : 
 as List<TechItem>,orms: null == orms ? _self._orms : orms // ignore: cast_nullable_to_non_nullable
 as List<TechItem>,basesDatos: null == basesDatos ? _self._basesDatos : basesDatos // ignore: cast_nullable_to_non_nullable
 as List<TechItem>,tiposArtefacto: null == tiposArtefacto ? _self._tiposArtefacto : tiposArtefacto // ignore: cast_nullable_to_non_nullable
+as List<TechItem>,tiposReporte: null == tiposReporte ? _self._tiposReporte : tiposReporte // ignore: cast_nullable_to_non_nullable
+as List<TechItem>,tiposXml: null == tiposXml ? _self._tiposXml : tiposXml // ignore: cast_nullable_to_non_nullable
 as List<TechItem>,
   ));
 }

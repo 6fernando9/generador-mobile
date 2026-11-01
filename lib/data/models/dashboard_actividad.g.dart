@@ -10,12 +10,12 @@ _DashboardActividad _$DashboardActividadFromJson(Map<String, dynamic> json) =>
     _DashboardActividad(
       total: (json['total'] as num?)?.toInt() ?? 0,
       porDiaSemana:
-          (json['porDiaSemana'] as List<dynamic>?)
+          (json['por_dia_semana'] as List<dynamic>?)
               ?.map((e) => DayOfWeekStat.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
       porHora:
-          (json['porHora'] as List<dynamic>?)
+          (json['por_hora'] as List<dynamic>?)
               ?.map((e) => HourStat.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
@@ -29,8 +29,8 @@ _DashboardActividad _$DashboardActividadFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$DashboardActividadToJson(_DashboardActividad instance) =>
     <String, dynamic>{
       'total': instance.total,
-      'porDiaSemana': instance.porDiaSemana,
-      'porHora': instance.porHora,
+      'por_dia_semana': instance.porDiaSemana,
+      'por_hora': instance.porHora,
       'heatmap': instance.heatmap,
     };
 

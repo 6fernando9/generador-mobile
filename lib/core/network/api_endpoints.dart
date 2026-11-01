@@ -15,21 +15,25 @@ class ApiEndpoints {
   static const String perfilPassword = '/perfil/password';
   static const String perfilIcono = '/perfil/icono';
 
-  // Dashboard endpoints
-  static const String dashboardResumen = '/dashboard/resumen';
-  static const String dashboardMembresias = '/dashboard/membresias';
-  static const String dashboardTendencia = '/dashboard/tendencia';
-  static const String dashboardActividad = '/dashboard/actividad';
-  static const String dashboardTecnologias = '/dashboard/tecnologias';
-  static const String dashboardProyectosUsuarios = '/dashboard/proyectos-usuarios';
-  static const String dashboardContactos = '/dashboard/contactos';
+  // Dashboard personal (BI) endpoints
+  static const String dashboardResumen = '/dashboard/mi-resumen';
+  static const String dashboardTendencia = '/dashboard/mi-tendencia';
+  static const String dashboardTecnologias = '/dashboard/mi-tecnologias';
+  static const String dashboardTecnologiasProyecto =
+      '/dashboard/mi-tecnologias/proyecto';
+  static const String dashboardTecnologiasReporte =
+      '/dashboard/mi-tecnologias/reporte';
+  static const String dashboardCatalogos = '/dashboard/mi-catalogos';
+  static const String dashboardActividad = '/dashboard/mi-actividad';
+  static const String dashboardProyectos = '/dashboard/mis-proyectos';
 
   // Pagos endpoints
   static const String pagosMiSuscripcion = '/pagos/mi-suscripcion';
   static const String pagosHistorial = '/pagos/historial';
   static const String pagosCheckout = '/pagos/checkout';
   static const String pagosVerificarSesion = '/pagos/verificar-sesion';
-  static const String pagosSincronizarPendientes = '/pagos/sincronizar-pendientes';
+  static const String pagosSincronizarPendientes =
+      '/pagos/sincronizar-pendientes';
 
   // Logs (Download history) endpoints
   static const String logs = '/logs/';

@@ -11,9 +11,9 @@ _DashboardResumen _$DashboardResumenFromJson(Map<String, dynamic> json) =>
       hoy: (json['hoy'] as num?)?.toInt() ?? 0,
       ayer: (json['ayer'] as num?)?.toInt() ?? 0,
       semana: (json['semana'] as num?)?.toInt() ?? 0,
-      semanaPasada: (json['semanaPasada'] as num?)?.toInt() ?? 0,
+      semanaPasada: (json['semana_pasada'] as num?)?.toInt() ?? 0,
       mes: (json['mes'] as num?)?.toInt() ?? 0,
-      mesPasado: (json['mesPasado'] as num?)?.toInt() ?? 0,
+      mesPasado: (json['mes_pasado'] as num?)?.toInt() ?? 0,
       total: (json['total'] as num?)?.toInt() ?? 0,
       deltas: json['deltas'] == null
           ? const Deltas()
@@ -25,17 +25,17 @@ Map<String, dynamic> _$DashboardResumenToJson(_DashboardResumen instance) =>
       'hoy': instance.hoy,
       'ayer': instance.ayer,
       'semana': instance.semana,
-      'semanaPasada': instance.semanaPasada,
+      'semana_pasada': instance.semanaPasada,
       'mes': instance.mes,
-      'mesPasado': instance.mesPasado,
+      'mes_pasado': instance.mesPasado,
       'total': instance.total,
       'deltas': instance.deltas,
     };
 
 _Deltas _$DeltasFromJson(Map<String, dynamic> json) => _Deltas(
-  hoy: (json['hoy'] as num?)?.toDouble() ?? 0.0,
-  semana: (json['semana'] as num?)?.toDouble() ?? 0.0,
-  mes: (json['mes'] as num?)?.toDouble() ?? 0.0,
+  hoy: (json['hoy'] as num?)?.toDouble(),
+  semana: (json['semana'] as num?)?.toDouble(),
+  mes: (json['mes'] as num?)?.toDouble(),
 );
 
 Map<String, dynamic> _$DeltasToJson(_Deltas instance) => <String, dynamic>{

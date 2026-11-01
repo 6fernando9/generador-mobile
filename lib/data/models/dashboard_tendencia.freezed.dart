@@ -304,7 +304,7 @@ as List<TimeSeriesPoint>,
 /// @nodoc
 mixin _$TimeSeriesPoint {
 
- String get periodo; int get total; int get backend; int get frontend; int get mobile;
+ String get periodo; int get total; Map<String, int> get porTipo;
 /// Create a copy of TimeSeriesPoint
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -318,20 +318,20 @@ $TimeSeriesPointCopyWith<TimeSeriesPoint> get copyWith => _$TimeSeriesPointCopyW
 @override
 bool operator ==(Object other) {
   final _this = this as TimeSeriesPoint;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TimeSeriesPoint&&(identical(other.periodo, _this.periodo) || other.periodo == _this.periodo)&&(identical(other.total, _this.total) || other.total == _this.total)&&(identical(other.backend, _this.backend) || other.backend == _this.backend)&&(identical(other.frontend, _this.frontend) || other.frontend == _this.frontend)&&(identical(other.mobile, _this.mobile) || other.mobile == _this.mobile));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TimeSeriesPoint&&(identical(other.periodo, _this.periodo) || other.periodo == _this.periodo)&&(identical(other.total, _this.total) || other.total == _this.total)&&const DeepCollectionEquality().equals(other.porTipo, _this.porTipo));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as TimeSeriesPoint;
-  return Object.hash(runtimeType,_this.periodo,_this.total,_this.backend,_this.frontend,_this.mobile);
+  return Object.hash(runtimeType,_this.periodo,_this.total,const DeepCollectionEquality().hash(_this.porTipo));
 }
 
 @override
 String toString() {
   final _this = this as TimeSeriesPoint;
-  return 'TimeSeriesPoint(periodo: ${_this.periodo}, total: ${_this.total}, backend: ${_this.backend}, frontend: ${_this.frontend}, mobile: ${_this.mobile})';
+  return 'TimeSeriesPoint(periodo: ${_this.periodo}, total: ${_this.total}, porTipo: ${_this.porTipo})';
 }
 
 
@@ -342,7 +342,7 @@ abstract mixin class $TimeSeriesPointCopyWith<$Res>  {
   factory $TimeSeriesPointCopyWith(TimeSeriesPoint value, $Res Function(TimeSeriesPoint) _then) = _$TimeSeriesPointCopyWithImpl;
 @useResult
 $Res call({
- String periodo, int total, int backend, int frontend, int mobile
+ String periodo, int total, Map<String, int> porTipo
 });
 
 
@@ -359,14 +359,12 @@ class _$TimeSeriesPointCopyWithImpl<$Res>
 
 /// Create a copy of TimeSeriesPoint
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? periodo = null,Object? total = null,Object? backend = null,Object? frontend = null,Object? mobile = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? periodo = null,Object? total = null,Object? porTipo = null,}) {
   return _then(TimeSeriesPoint(
 periodo: null == periodo ? _self.periodo : periodo // ignore: cast_nullable_to_non_nullable
 as String,total: null == total ? _self.total : total // ignore: cast_nullable_to_non_nullable
-as int,backend: null == backend ? _self.backend : backend // ignore: cast_nullable_to_non_nullable
-as int,frontend: null == frontend ? _self.frontend : frontend // ignore: cast_nullable_to_non_nullable
-as int,mobile: null == mobile ? _self.mobile : mobile // ignore: cast_nullable_to_non_nullable
-as int,
+as int,porTipo: null == porTipo ? _self.porTipo : porTipo // ignore: cast_nullable_to_non_nullable
+as Map<String, int>,
   ));
 }
 
@@ -451,10 +449,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String periodo,  int total,  int backend,  int frontend,  int mobile)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String periodo,  int total,  Map<String, int> porTipo)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _TimeSeriesPoint() when $default != null:
-return $default(_that.periodo,_that.total,_that.backend,_that.frontend,_that.mobile);case _:
+return $default(_that.periodo,_that.total,_that.porTipo);case _:
   return orElse();
 
 }
@@ -472,10 +470,10 @@ return $default(_that.periodo,_that.total,_that.backend,_that.frontend,_that.mob
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String periodo,  int total,  int backend,  int frontend,  int mobile)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String periodo,  int total,  Map<String, int> porTipo)  $default,) {final _that = this;
 switch (_that) {
 case _TimeSeriesPoint():
-return $default(_that.periodo,_that.total,_that.backend,_that.frontend,_that.mobile);case _:
+return $default(_that.periodo,_that.total,_that.porTipo);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -492,10 +490,10 @@ return $default(_that.periodo,_that.total,_that.backend,_that.frontend,_that.mob
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String periodo,  int total,  int backend,  int frontend,  int mobile)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String periodo,  int total,  Map<String, int> porTipo)?  $default,) {final _that = this;
 switch (_that) {
 case _TimeSeriesPoint() when $default != null:
-return $default(_that.periodo,_that.total,_that.backend,_that.frontend,_that.mobile);case _:
+return $default(_that.periodo,_that.total,_that.porTipo);case _:
   return null;
 
 }
@@ -507,14 +505,18 @@ return $default(_that.periodo,_that.total,_that.backend,_that.frontend,_that.mob
 @JsonSerializable()
 
 class _TimeSeriesPoint implements TimeSeriesPoint {
-  const _TimeSeriesPoint({this.periodo = '', this.total = 0, this.backend = 0, this.frontend = 0, this.mobile = 0});
+  const _TimeSeriesPoint({this.periodo = '', this.total = 0,  Map<String, int> porTipo = const <String, int>{}}): _porTipo = porTipo;
   factory _TimeSeriesPoint.fromJson(Map<String, dynamic> json) => _$TimeSeriesPointFromJson(json);
 
 @override@JsonKey() final  String periodo;
 @override@JsonKey() final  int total;
-@override@JsonKey() final  int backend;
-@override@JsonKey() final  int frontend;
-@override@JsonKey() final  int mobile;
+ final  Map<String, int> _porTipo;
+@override@JsonKey() Map<String, int> get porTipo {
+  if (_porTipo is EqualUnmodifiableMapView) return _porTipo;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(_porTipo);
+}
+
 
 /// Create a copy of TimeSeriesPoint
 /// with the given fields replaced by the non-null parameter values.
@@ -529,18 +531,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _TimeSeriesPoint&&(identical(other.periodo, periodo) || other.periodo == periodo)&&(identical(other.total, total) || other.total == total)&&(identical(other.backend, backend) || other.backend == backend)&&(identical(other.frontend, frontend) || other.frontend == frontend)&&(identical(other.mobile, mobile) || other.mobile == mobile));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _TimeSeriesPoint&&(identical(other.periodo, periodo) || other.periodo == periodo)&&(identical(other.total, total) || other.total == total)&&const DeepCollectionEquality().equals(other.porTipo, _porTipo));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,periodo,total,backend,frontend,mobile);
+    return Object.hash(runtimeType,periodo,total,const DeepCollectionEquality().hash(_porTipo));
 }
 
 @override
 String toString() {
-    return 'TimeSeriesPoint(periodo: $periodo, total: $total, backend: $backend, frontend: $frontend, mobile: $mobile)';
+    return 'TimeSeriesPoint(periodo: $periodo, total: $total, porTipo: $porTipo)';
 }
 
 
@@ -551,7 +553,7 @@ abstract mixin class _$TimeSeriesPointCopyWith<$Res> implements $TimeSeriesPoint
   factory _$TimeSeriesPointCopyWith(_TimeSeriesPoint value, $Res Function(_TimeSeriesPoint) _then) = __$TimeSeriesPointCopyWithImpl;
 @override @useResult
 $Res call({
- String periodo, int total, int backend, int frontend, int mobile
+ String periodo, int total, Map<String, int> porTipo
 });
 
 
@@ -568,14 +570,12 @@ class __$TimeSeriesPointCopyWithImpl<$Res>
 
 /// Create a copy of TimeSeriesPoint
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? periodo = null,Object? total = null,Object? backend = null,Object? frontend = null,Object? mobile = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? periodo = null,Object? total = null,Object? porTipo = null,}) {
   return _then(_TimeSeriesPoint(
 periodo: null == periodo ? _self.periodo : periodo // ignore: cast_nullable_to_non_nullable
 as String,total: null == total ? _self.total : total // ignore: cast_nullable_to_non_nullable
-as int,backend: null == backend ? _self.backend : backend // ignore: cast_nullable_to_non_nullable
-as int,frontend: null == frontend ? _self.frontend : frontend // ignore: cast_nullable_to_non_nullable
-as int,mobile: null == mobile ? _self.mobile : mobile // ignore: cast_nullable_to_non_nullable
-as int,
+as int,porTipo: null == porTipo ? _self._porTipo : porTipo // ignore: cast_nullable_to_non_nullable
+as Map<String, int>,
   ));
 }
 
