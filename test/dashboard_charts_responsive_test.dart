@@ -8,12 +8,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mobile/data/models/dashboard_catalogos.dart';
+import 'package:mobile/data/models/dashboard_resumen.dart';
 import 'package:mobile/data/models/dashboard_tecnologias.dart';
 import 'package:mobile/data/models/dashboard_tendencia.dart';
 import 'package:mobile/presentation/dashboard/dashboard_providers.dart';
 import 'package:mobile/presentation/dashboard/widgets/charts/neon_donut_chart.dart';
 import 'package:mobile/presentation/dashboard/widgets/charts/neon_line_chart.dart';
+import 'package:mobile/presentation/dashboard/widgets/kpi_card_row.dart';
 import 'package:mobile/presentation/dashboard/widgets/tecnologias_section.dart';
+
+DashboardResumen _resumen() => const DashboardResumen(
+  hoy: 2,
+  ayer: 0,
+  semana: 66,
+  semanaPasada: 11,
+  mes: 2,
+  mesPasado: 0,
+  total: 77,
+  deltas: Deltas(semana: 500),
+);
 
 DashboardTecnologias _tecnologias() {
   List<TechItem> items(int n) => List.generate(
@@ -81,9 +94,11 @@ Future<void> _pumpAtSize(
 
   // Mirror the dashboard structure: full-width ListView with 16px padding.
   await tester.pumpWidget(
-    MaterialApp(
-      home: Scaffold(
-        body: ListView(padding: const EdgeInsets.all(16), children: [child]),
+    ProviderScope(
+      child: MaterialApp(
+        home: Scaffold(
+          body: ListView(padding: const EdgeInsets.all(16), children: [child]),
+        ),
       ),
     ),
   );
@@ -157,6 +172,33 @@ void main() {
         tester.takeException(),
         isNull,
         reason: 'TecnologiasSection overflowed at logical size $size',
+      );
+    }
+  });
+
+  testWidgets('KpiCardRow fits without overflow at multiple sizes', (
+    tester,
+  ) async {
+    for (final size in _sizes) {
+      await _pumpAtSize(tester, size, KpiCardRow(resumen: _resumen()));
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'KpiCardRow overflowed at logical size $size',
+      );
+    }
+  });
+
+  testWidgets('KpiCardRow fits with large text scale', (tester) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 1.4;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+    for (final size in _sizes) {
+      await _pumpAtSize(tester, size, KpiCardRow(resumen: _resumen()));
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'KpiCardRow overflowed with textScale 1.4 at $size',
       );
     }
   });

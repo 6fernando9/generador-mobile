@@ -122,18 +122,25 @@ class TecnologiasSection extends ConsumerWidget {
                       },
                     ),
                   const SizedBox(height: 8),
-                  Row(
+                  Wrap(
+                    alignment: WrapAlignment.end,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 4,
                     children: [
                       if (seleccion.isNotEmpty)
-                        TextButton(
+                        TextButton.icon(
                           onPressed: () {
                             ref
                                 .read(tecnologiaFiltrosProvider.notifier)
                                 .setSeleccion(vista, categoria, <int>{});
                           },
-                          child: const Text('Quitar filtros'),
+                          icon: const Icon(
+                            Icons.filter_alt_off_rounded,
+                            size: 18,
+                          ),
+                          label: const Text('Quitar filtros'),
                         ),
-                      const Spacer(),
                       TextButton.icon(
                         onPressed: catalogoItems.isEmpty
                             ? null
@@ -482,8 +489,15 @@ class _SeleccionTecnologiaDialogState
   @override
   void initState() {
     super.initState();
-    _seleccion = Set<int>.from(widget.seleccion);
+    // Sin filtros activos el backend devuelve TODAS las opciones, así que el
+    // modal arranca con todo marcado para reflejar lo que se está mostrando.
+    _seleccion = widget.seleccion.isEmpty
+        ? widget.items.map((e) => e.id).toSet()
+        : Set<int>.from(widget.seleccion);
   }
+
+  bool get _todoSeleccionado =>
+      widget.items.isNotEmpty && _seleccion.length == widget.items.length;
 
   @override
   Widget build(BuildContext context) {
@@ -516,67 +530,99 @@ class _SeleccionTecnologiaDialogState
                   ),
                 ),
               )
-            : ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.sizeOf(context).height * 0.55,
-                ),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: widget.items.length,
-                  itemBuilder: (context, index) {
-                    final item = widget.items[index];
-                    final checked = _seleccion.contains(item.id);
-                    return CheckboxListTile(
-                      value: checked,
-                      contentPadding: EdgeInsets.zero,
-                      controlAffinity: ListTileControlAffinity.leading,
-                      activeColor: neon,
-                      onChanged: (value) {
-                        setState(() {
-                          if (value == true) {
-                            _seleccion.add(item.id);
-                          } else {
-                            _seleccion.remove(item.id);
-                          }
-                        });
-                      },
-                      secondary: TechIcon(
-                        icono: item.icono,
-                        iconoTipo: item.iconoTipo,
-                        size: 22,
-                        color: neon,
-                        fallback: fallback,
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${_seleccion.length} de ${widget.items.length} seleccionados',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: colorScheme.onSurface.withValues(alpha: 0.55),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Flexible(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.sizeOf(context).height * 0.55,
                       ),
-                      title: Text(
-                        item.nombre,
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: colorScheme.onSurface,
-                        ),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: widget.items.length,
+                        itemBuilder: (context, index) {
+                          final item = widget.items[index];
+                          final checked = _seleccion.contains(item.id);
+                          return CheckboxListTile(
+                            value: checked,
+                            contentPadding: EdgeInsets.zero,
+                            controlAffinity: ListTileControlAffinity.leading,
+                            activeColor: neon,
+                            onChanged: (value) {
+                              setState(() {
+                                if (value == true) {
+                                  _seleccion.add(item.id);
+                                } else {
+                                  _seleccion.remove(item.id);
+                                }
+                              });
+                            },
+                            secondary: TechIcon(
+                              icono: item.icono,
+                              iconoTipo: item.iconoTipo,
+                              size: 22,
+                              color: neon,
+                              fallback: fallback,
+                            ),
+                            title: Text(
+                              item.nombre,
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                color: colorScheme.onSurface,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '${item.total} usos',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: colorScheme.onSurface.withValues(
+                                  alpha: 0.5,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                      subtitle: Text(
-                        '${item.total} usos',
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          color: colorScheme.onSurface.withValues(alpha: 0.5),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                    ),
+                  ),
+                ],
               ),
       ),
       actions: [
         TextButton(
-          onPressed: () => setState(_seleccion.clear),
-          child: const Text('Limpiar'),
+          onPressed: widget.items.isEmpty
+              ? null
+              : () => setState(() {
+                  if (_todoSeleccionado) {
+                    _seleccion.clear();
+                  } else {
+                    _seleccion = widget.items.map((e) => e.id).toSet();
+                  }
+                }),
+          child: Text(_todoSeleccionado ? 'Ninguno' : 'Todos'),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancelar'),
         ),
         FilledButton(
-          onPressed: () => Navigator.of(context).pop(_seleccion),
+          onPressed: _seleccion.isEmpty
+              ? null
+              : () => Navigator.of(context).pop(
+                  // Todo marcado equivale a "sin filtro" (el backend ya
+                  // devuelve todas las opciones por defecto).
+                  _todoSeleccionado ? <int>{} : _seleccion,
+                ),
           child: const Text('Aplicar'),
         ),
       ],

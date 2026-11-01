@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:vector_math/vector_math_64.dart' hide Colors;
+
 import '../../../core/theme/app_theme.dart';
 import '../../../core/network/api_client.dart';
 
@@ -42,16 +43,21 @@ class GlowCard extends StatelessWidget {
       padding: padding ?? const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius),
-        gradient: gradient ??
+        gradient:
+            gradient ??
             LinearGradient(
               colors: isDark
                   ? [
                       colorScheme.surface.withValues(alpha: 0.9),
-                      colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
+                      colorScheme.surfaceContainerHighest.withValues(
+                        alpha: 0.7,
+                      ),
                     ]
                   : [
                       colorScheme.surface,
-                      colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                      colorScheme.surfaceContainerHighest.withValues(
+                        alpha: 0.5,
+                      ),
                     ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -75,17 +81,18 @@ class GlowCard extends StatelessWidget {
     );
 
     if (onTap != null) {
-      card = GestureDetector(
-        onTap: onTap,
-        child: card,
-      );
+      card = GestureDetector(onTap: onTap, child: card);
     }
 
     if (animate) {
       return Animate(
         effects: [
           FadeEffect(duration: 300.ms),
-          SlideEffect(begin: const Offset(0, 0.1), end: Offset.zero, duration: 300.ms),
+          SlideEffect(
+            begin: const Offset(0, 0.1),
+            end: Offset.zero,
+            duration: 300.ms,
+          ),
         ],
         child: card,
       );
@@ -130,84 +137,180 @@ class NeonMetricCard extends StatelessWidget {
         FadeEffect(duration: 400.ms),
         SlideEffect(begin: const Offset(-0.2, 0), end: Offset.zero),
       ],
-      child: GlowCard(
-        glowColor: effectiveGlowColor,
-        onTap: onTap,
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            // Icon with glow
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                gradient: LinearGradient(
-                  colors: [
-                    effectiveIconColor.withValues(alpha: 0.2),
-                    effectiveIconColor.withValues(alpha: 0.1),
-                  ],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: effectiveIconColor.withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    spreadRadius: 1,
-                  ),
-                ],
-              ),
-              child: Icon(icon, color: effectiveIconColor, size: 28),
-            ),
-            const SizedBox(width: 16),
-            // Title and value
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: colorScheme.onSurface.withValues(alpha: 0.6),
-                          fontWeight: FontWeight.w500,
-                        ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    value,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: colorScheme.onSurface,
-                          fontWeight: FontWeight.w700,
-                          fontFamily: 'Orbitron',
-                        ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle!,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurface.withValues(alpha: 0.5),
-                          ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            if (trailing != null) trailing!,
-            if (onTap != null && trailing == null)
-              Icon(
-                Icons.chevron_right_rounded,
-                color: colorScheme.onSurface.withValues(alpha: 0.4),
-                size: 24,
-              ),
-          ],
-        ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Narrow cards (2-column grids on phones/tablets) get a vertical,
+          // compact layout so titles and values are not squeezed next to the
+          // icon.
+          final compact = constraints.maxWidth < 200;
+          if (compact) {
+            return _buildCompact(
+              context,
+              colorScheme,
+              effectiveGlowColor,
+              effectiveIconColor,
+            );
+          }
+          return _buildHorizontal(
+            context,
+            colorScheme,
+            effectiveGlowColor,
+            effectiveIconColor,
+          );
+        },
       ),
+    );
+  }
+
+  Widget _buildCompact(
+    BuildContext context,
+    ColorScheme colorScheme,
+    Color glowColor,
+    Color iconColor,
+  ) {
+    return GlowCard(
+      glowColor: glowColor,
+      onTap: onTap,
+      margin: EdgeInsets.zero,
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _iconBox(iconColor, boxSize: 30, iconSize: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.65),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 11,
+                    height: 1.2,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'Orbitron',
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              subtitle!,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurface.withValues(alpha: 0.5),
+                fontSize: 10,
+                height: 1.2,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHorizontal(
+    BuildContext context,
+    ColorScheme colorScheme,
+    Color glowColor,
+    Color iconColor,
+  ) {
+    return GlowCard(
+      glowColor: glowColor,
+      onTap: onTap,
+      margin: EdgeInsets.zero,
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          _iconBox(iconColor),
+          const SizedBox(width: 16),
+          // Title and value
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Orbitron',
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (trailing != null) trailing!,
+          if (onTap != null && trailing == null)
+            Icon(
+              Icons.chevron_right_rounded,
+              color: colorScheme.onSurface.withValues(alpha: 0.4),
+              size: 24,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _iconBox(Color color, {double boxSize = 56, double iconSize = 28}) {
+    return Container(
+      width: boxSize,
+      height: boxSize,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(boxSize * 0.25),
+        gradient: LinearGradient(
+          colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.1)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.3),
+            blurRadius: 12,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Icon(icon, color: color, size: iconSize),
     );
   }
 }
@@ -250,9 +353,9 @@ class NeonStatCard extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: colorScheme.onSurface.withValues(alpha: 0.6),
-                  fontWeight: FontWeight.w500,
-                ),
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
+              fontWeight: FontWeight.w500,
+            ),
           ),
           const SizedBox(height: 12),
           Row(
@@ -262,10 +365,10 @@ class NeonStatCard extends StatelessWidget {
                 child: Text(
                   value,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: colorScheme.onSurface,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Orbitron',
-                      ),
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Orbitron',
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -273,17 +376,25 @@ class NeonStatCard extends StatelessWidget {
               if (trend != null) ...[
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: trendColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: trendColor.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: trendColor.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        trendIcon ?? (trendPositive ? Icons.trending_up_rounded : Icons.trending_down_rounded),
+                        trendIcon ??
+                            (trendPositive
+                                ? Icons.trending_up_rounded
+                                : Icons.trending_down_rounded),
                         color: trendColor,
                         size: 14,
                       ),
@@ -291,9 +402,9 @@ class NeonStatCard extends StatelessWidget {
                       Text(
                         trend!,
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: trendColor,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          color: trendColor,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
@@ -368,17 +479,17 @@ class NeonInfoCard extends StatelessWidget {
                     Text(
                       title,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: colorScheme.onSurface,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     if (description.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
                         description,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onSurface.withValues(alpha: 0.6),
-                            ),
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -431,7 +542,9 @@ class NeonListTile extends StatelessWidget {
     return GlowCard(
       glowColor: effectiveGlowColor,
       onTap: onTap,
-      padding: contentPadding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding:
+          contentPadding ??
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       margin: EdgeInsets.zero,
       borderRadius: 0,
       child: Row(
@@ -445,9 +558,9 @@ class NeonListTile extends StatelessWidget {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -456,8 +569,8 @@ class NeonListTile extends StatelessWidget {
                   Text(
                     subtitle!,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurface.withValues(alpha: 0.5),
-                        ),
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -516,10 +629,7 @@ class NeonAvatar extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: LinearGradient(
-          colors: [
-            effectiveBgColor,
-            effectiveBgColor.withValues(alpha: 0.8),
-          ],
+          colors: [effectiveBgColor, effectiveBgColor.withValues(alpha: 0.8)],
         ),
         boxShadow: [
           BoxShadow(
@@ -540,25 +650,26 @@ class NeonAvatar extends StatelessWidget {
               child: Text(
                 initials ?? '?',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: effectiveTextColor,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  color: effectiveTextColor,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             )
           : null,
     );
 
     if (onTap != null) {
-      avatar = GestureDetector(
-        onTap: onTap,
-        child: avatar,
-      );
+      avatar = GestureDetector(onTap: onTap, child: avatar);
     }
 
     return Animate(
       effects: [
         FadeEffect(duration: 300.ms),
-        ScaleEffect(delay: Duration(milliseconds: 100), begin: const Offset(0, 0), end: const Offset(1, 1)),
+        ScaleEffect(
+          delay: Duration(milliseconds: 100),
+          begin: const Offset(0, 0),
+          end: const Offset(1, 1),
+        ),
       ],
       child: avatar,
     );
@@ -636,10 +747,8 @@ class NeonBadge extends StatelessWidget {
           ],
           Text(
             label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: textColor,
-                  fontWeight: FontWeight.w600,
-                ),
+            style: Theme.of(context).textTheme.labelSmall
+                ?.copyWith(color: textColor, fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -652,18 +761,18 @@ class NeonBadge extends StatelessWidget {
     return Animate(
       effects: [
         FadeEffect(duration: 300.ms),
-        ScaleEffect(delay: Duration(milliseconds: 100), begin: const Offset(0, 0), end: const Offset(1, 1)),
+        ScaleEffect(
+          delay: Duration(milliseconds: 100),
+          begin: const Offset(0, 0),
+          end: const Offset(1, 1),
+        ),
       ],
       child: badge,
     );
   }
 }
 
-enum NeonBadgeStyle {
-  filled,
-  outline,
-  soft,
-}
+enum NeonBadgeStyle { filled, outline, soft }
 
 /// Neon progress indicator card
 class NeonProgressCard extends StatelessWidget {
@@ -704,19 +813,19 @@ class NeonProgressCard extends StatelessWidget {
                 child: Text(
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               if (showPercentage)
                 Text(
                   '${(clampedProgress * 100).toInt()}%',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: effectiveProgressColor,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Orbitron',
-                      ),
+                    color: effectiveProgressColor,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Orbitron',
+                  ),
                 ),
             ],
           ),
@@ -763,8 +872,8 @@ class NeonProgressCard extends StatelessWidget {
             Text(
               label!,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurface.withValues(alpha: 0.5),
-                  ),
+                color: colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
             ),
           ],
         ],

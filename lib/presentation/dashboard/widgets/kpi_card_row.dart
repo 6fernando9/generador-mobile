@@ -76,18 +76,16 @@ class KpiCardRow extends ConsumerWidget {
         const SizedBox(height: 16),
         LayoutBuilder(
           builder: (context, constraints) {
-            final isMobile = constraints.maxWidth < 600;
-            final crossAxisCount = isMobile ? 2 : 4;
-            final childAspectRatio = isMobile ? 1.1 : 1.2;
+            final metricsGrid = _gridMetrics(context, constraints.maxWidth);
 
             return GridView.builder(
               physics: const NeverScrollableScrollPhysics(),
               shrinkWrap: true,
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: crossAxisCount,
-                childAspectRatio: childAspectRatio,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
+                crossAxisCount: metricsGrid.columns,
+                mainAxisExtent: metricsGrid.extent,
+                crossAxisSpacing: _gap,
+                mainAxisSpacing: _gap,
               ),
               itemCount: metrics.length,
               itemBuilder: (context, index) {
@@ -102,6 +100,24 @@ class KpiCardRow extends ConsumerWidget {
         ),
       ],
     );
+  }
+
+  /// Spacing shared by the KPI grid cells.
+  static const double _gap = 12;
+
+  /// Resolves column count and row height for the KPI grid.
+  ///
+  /// Cards narrower than 200px use the compact vertical layout, so they need
+  /// a little more height (title can wrap to two lines).
+  static ({int columns, double extent}) _gridMetrics(
+    BuildContext context,
+    double width,
+  ) {
+    final columns = width < 600 ? 2 : 4;
+    final cardWidth = (width - _gap * (columns - 1)) / columns;
+    final scale = MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.6);
+    final baseExtent = cardWidth < 200 ? 138.0 : 120.0;
+    return (columns: columns, extent: baseExtent * scale);
   }
 
   String _formatComparison(double? percentage) {
@@ -123,16 +139,16 @@ class KpiCardRow extends ConsumerWidget {
   Widget _buildSkeleton(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isMobile = constraints.maxWidth < 600;
+        final metricsGrid = _gridMetrics(context, constraints.maxWidth);
 
         return GridView.builder(
           physics: const NeverScrollableScrollPhysics(),
           shrinkWrap: true,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: isMobile ? 2 : 4,
-            childAspectRatio: isMobile ? 1.1 : 1.2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
+            crossAxisCount: metricsGrid.columns,
+            mainAxisExtent: metricsGrid.extent,
+            crossAxisSpacing: _gap,
+            mainAxisSpacing: _gap,
           ),
           itemCount: 4,
           itemBuilder: (context, index) => const _KpiCardSkeleton(),
