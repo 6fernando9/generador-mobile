@@ -1,8 +1,12 @@
 // Catálogos de exportación SQL/XML (`GET /exportar/opciones`).
 import 'package:dio/dio.dart';
 import 'package:mobile/core/network/api_client.dart';
-import 'package:mobile/core/network/api_endpoints.dart';
 import 'package:mobile/data/models/exportacion_models.dart';
+
+/// Endpoints de exportación SQL/XML (`/api/exportar`).
+class _Endpoints {
+  static const String opciones = '/exportar/opciones';
+}
 
 class ExportacionService {
   final Dio _dio;
@@ -11,7 +15,7 @@ class ExportacionService {
 
   /// Tipos de reporte (SQL/XML) con sus bases de datos destino o tipos XML.
   Future<OpcionesExportacion> opciones() async {
-    final response = await _dio.get(ApiEndpoints.exportarOpciones);
+    final response = await _dio.get(_Endpoints.opciones);
     final status = response.statusCode;
     if ((status == 200 || status == 201) && response.data is Map) {
       return OpcionesExportacion.fromJson(

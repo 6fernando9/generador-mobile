@@ -90,17 +90,20 @@ flutter pub outdated
 lib/
 ├── main.dart                          # App entry, GoRouter, Riverpod ProviderScope, Theme
 ├── core/
-│   ├── constants/
-│   │   └── api_endpoints.dart         # Centralized API endpoint paths
 │   ├── network/
 │   │   ├── api_client.dart            # Dio singleton with CookieJar, interceptors
-│   │   ├── api_endpoints.dart         # API endpoint constants
-│   │   └── services/                  # Service classes (5 services)
+│   │   └── services/                  # Service classes (endpoints viven en cada uno)
 │   │       ├── auth_service.dart      # login, register, logout, me
 │   │       ├── usuario_service.dart   # profile CRUD, avatar upload
 │   │       ├── dashboard_service.dart # resumen, membresias, tendencia, etc.
 │   │       ├── pagos_service.dart     # mi-suscripcion, historial, checkout
-│   │       └── logs_service.dart      # download history, regenerar
+│   │       ├── logs_service.dart      # historial, detalle público, regenerar
+│   │       ├── generacion_service.dart# catálogos de generación
+│   │       └── exportacion_service.dart # catálogos de exportación SQL/XML
+│   ├── config/
+│   │   └── app_config.dart            # WEB_BASE_URL + URL del visor
+│   ├── files/
+│   │   └── download_saver.dart        # guardar/abrir archivos descargados
 │   ├── storage/
 │   │   └── secure_storage.dart        # flutter_secure_storage wrapper
 │   ├── theme/
@@ -307,8 +310,7 @@ cuerpo para mostrar el mensaje.
 |------|---------|
 | `lib/main.dart` | App entry, routing, theme, providers |
 | `lib/core/network/api_client.dart` | Dio + CookieJar + interceptors |
-| `lib/core/network/api_endpoints.dart` | All API endpoint paths |
-| `lib/core/network/services/*.dart` | 5 service classes for API calls |
+| `lib/core/network/services/*.dart` | Servicios de API; cada uno declara su clase privada `_Endpoints` |
 | `lib/core/theme/app_theme.dart` | Light/dark Material 3 themes |
 | `lib/core/theme/neon_colors.dart` | Neon color palette |
 | `lib/core/storage/secure_storage.dart` | Secure user data/theme storage (el JWT solo vive en la cookie) |

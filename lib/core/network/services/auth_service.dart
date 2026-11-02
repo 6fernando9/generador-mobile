@@ -1,7 +1,14 @@
 // Auth Service for KrakenDraw - Handles authentication endpoints
 import 'package:dio/dio.dart';
 import '../api_client.dart';
-import '../api_endpoints.dart';
+
+/// Endpoints del dominio de autenticación (`/api/auth`).
+class _Endpoints {
+  static const String register = '/auth/register/';
+  static const String login = '/auth/login/';
+  static const String logout = '/auth/logout/';
+  static const String me = '/auth/me/';
+}
 
 /// Auth service handling login, register, logout, and me endpoints
 class AuthService {
@@ -17,7 +24,7 @@ class AuthService {
     required String password,
   }) async {
     final response = await _dio.post(
-      ApiEndpoints.authRegister,
+      _Endpoints.register,
       data: {
         'username': username,
         'email': email,
@@ -34,7 +41,7 @@ class AuthService {
     required String password,
   }) async {
     final response = await _dio.post(
-      ApiEndpoints.authLogin,
+      _Endpoints.login,
       data: {
         'email': email,
         'password': password,
@@ -46,13 +53,13 @@ class AuthService {
   /// Logout user
   /// Clears JWT cookie
   Future<void> logout() async {
-    await _dio.post(ApiEndpoints.authLogout);
+    await _dio.post(_Endpoints.logout);
   }
 
   /// Get current authenticated user
   /// Returns user data
   Future<Map<String, dynamic>> me() async {
-    final response = await _dio.get(ApiEndpoints.authMe);
+    final response = await _dio.get(_Endpoints.me);
     return _handleResponse(response);
   }
 

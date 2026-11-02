@@ -6,7 +6,7 @@ import '../../shared/widgets/neon_card.dart';
 // Provider for dashboard metrics
 final dashboardMetricsProvider = FutureProvider<List<DashboardMetric>>((ref) async {
   // TODO: Fetch from API
-  // final response = await ApiClient.instance.dio.get(ApiEndpoints.dashboardResumen);
+  // final response = await DashboardService().getResumen();
   // return DashboardMetric.fromJsonList(response.data);
   await Future.delayed(const Duration(milliseconds: 500));
   return [

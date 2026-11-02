@@ -8,7 +8,18 @@ import 'package:mobile/data/models/dashboard_tecnologias.dart';
 import 'package:mobile/data/models/dashboard_tendencia.dart';
 
 import '../api_client.dart';
-import '../api_endpoints.dart';
+
+/// Endpoints del dashboard personal (`/api/dashboard`).
+class _Endpoints {
+  static const String resumen = '/dashboard/mi-resumen';
+  static const String tendencia = '/dashboard/mi-tendencia';
+  static const String tecnologias = '/dashboard/mi-tecnologias';
+  static const String tecnologiasProyecto = '/dashboard/mi-tecnologias/proyecto';
+  static const String tecnologiasReporte = '/dashboard/mi-tecnologias/reporte';
+  static const String catalogos = '/dashboard/mi-catalogos';
+  static const String actividad = '/dashboard/mi-actividad';
+  static const String proyectos = '/dashboard/mis-proyectos';
+}
 
 /// Dashboard service handling the personal (BI) dashboard endpoints.
 class DashboardService {
@@ -19,7 +30,7 @@ class DashboardService {
   /// KPIs personales: hoy, semana, mes y total histórico.
   Future<DashboardResumen> getResumen({String? tz}) async {
     final response = await _dio.get(
-      ApiEndpoints.dashboardResumen,
+      _Endpoints.resumen,
       queryParameters: _query({'tz': tz}),
     );
     return DashboardResumen.fromJson(_handleResponse(response));
@@ -32,7 +43,7 @@ class DashboardService {
     DateTime? hasta,
   }) async {
     final response = await _dio.get(
-      ApiEndpoints.dashboardTendencia,
+      _Endpoints.tendencia,
       queryParameters: _query({
         'tz': tz,
         'desde': _fecha(desde),
@@ -54,11 +65,9 @@ class DashboardService {
     Map<String, Set<int>> filtros = const {},
   }) async {
     final path = switch (vista) {
-      DashboardTecnologiaVista.total => ApiEndpoints.dashboardTecnologias,
-      DashboardTecnologiaVista.proyecto =>
-        ApiEndpoints.dashboardTecnologiasProyecto,
-      DashboardTecnologiaVista.reporte =>
-        ApiEndpoints.dashboardTecnologiasReporte,
+      DashboardTecnologiaVista.total => _Endpoints.tecnologias,
+      DashboardTecnologiaVista.proyecto => _Endpoints.tecnologiasProyecto,
+      DashboardTecnologiaVista.reporte => _Endpoints.tecnologiasReporte,
     };
 
     final validKeys = vista.categorias.map((c) => c.apiKey).toSet();
@@ -82,7 +91,7 @@ class DashboardService {
 
   /// Catálogo con solo los valores que el usuario ya utilizó.
   Future<DashboardCatalogos> getCatalogos() async {
-    final response = await _dio.get(ApiEndpoints.dashboardCatalogos);
+    final response = await _dio.get(_Endpoints.catalogos);
     return DashboardCatalogos.fromJson(_handleResponse(response));
   }
 
@@ -93,7 +102,7 @@ class DashboardService {
     DateTime? hasta,
   }) async {
     final response = await _dio.get(
-      ApiEndpoints.dashboardActividad,
+      _Endpoints.actividad,
       queryParameters: _query({
         'tz': tz,
         'desde': _fecha(desde),
@@ -110,7 +119,7 @@ class DashboardService {
     int? limite,
   }) async {
     final response = await _dio.get(
-      ApiEndpoints.dashboardProyectos,
+      _Endpoints.proyectos,
       queryParameters: _query({
         'desde': _fecha(desde),
         'hasta': _fecha(hasta),

@@ -1,7 +1,15 @@
 // Pagos Service for KrakenDraw - Handles payment endpoints
 import 'package:dio/dio.dart';
 import '../api_client.dart';
-import '../api_endpoints.dart';
+
+/// Endpoints de pagos (`/api/pagos`).
+class _Endpoints {
+  static const String miSuscripcion = '/pagos/mi-suscripcion';
+  static const String historial = '/pagos/historial';
+  static const String checkout = '/pagos/checkout';
+  static const String verificarSesion = '/pagos/verificar-sesion';
+  static const String sincronizarPendientes = '/pagos/sincronizar-pendientes';
+}
 
 /// Pagos service handling payment-related endpoints
 class PagosService {
@@ -11,7 +19,7 @@ class PagosService {
 
   /// Get current user subscription
   Future<Map<String, dynamic>> getMiSuscripcion() async {
-    final response = await _dio.get(ApiEndpoints.pagosMiSuscripcion);
+    final response = await _dio.get(_Endpoints.miSuscripcion);
     return _handleResponse(response);
   }
 
@@ -30,7 +38,7 @@ class PagosService {
     }
 
     final response = await _dio.get(
-      ApiEndpoints.pagosHistorial,
+      _Endpoints.historial,
       queryParameters: queryParams,
     );
     return _handleResponse(response);
@@ -43,7 +51,7 @@ class PagosService {
     String? cancelUrl,
   }) async {
     final response = await _dio.post(
-      ApiEndpoints.pagosCheckout,
+      _Endpoints.checkout,
       data: {
         'plan_id': planId,
         if (successUrl != null) 'success_url': successUrl,
@@ -56,7 +64,7 @@ class PagosService {
   /// Verify Stripe checkout session
   Future<Map<String, dynamic>> verificarSesion(String sessionId) async {
     final response = await _dio.post(
-      ApiEndpoints.pagosVerificarSesion,
+      _Endpoints.verificarSesion,
       data: {'session_id': sessionId},
     );
     return _handleResponse(response);
@@ -64,7 +72,7 @@ class PagosService {
 
   /// Sync pending payments (for cases where webhook didn't fire)
   Future<Map<String, dynamic>> sincronizarPendientes() async {
-    final response = await _dio.post(ApiEndpoints.pagosSincronizarPendientes);
+    final response = await _dio.post(_Endpoints.sincronizarPendientes);
     return _handleResponse(response);
   }
 

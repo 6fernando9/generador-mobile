@@ -1,7 +1,13 @@
 // Usuario Service for KrakenDraw - Handles user profile endpoints
 import 'package:dio/dio.dart';
 import '../api_client.dart';
-import '../api_endpoints.dart';
+
+/// Endpoints del perfil del usuario (`/api/perfil`).
+class _Endpoints {
+  static const String perfil = '/perfil/';
+  static const String password = '/perfil/password';
+  static const String icono = '/perfil/icono';
+}
 
 /// Usuario service handling profile-related endpoints
 class UsuarioService {
@@ -11,7 +17,7 @@ class UsuarioService {
 
   /// Get current user profile
   Future<Map<String, dynamic>> getProfile() async {
-    final response = await _dio.get(ApiEndpoints.perfil);
+    final response = await _dio.get(_Endpoints.perfil);
     return _handleResponse(response);
   }
 
@@ -27,7 +33,7 @@ class UsuarioService {
     if (profileIcon != null) data['profile_icon'] = profileIcon;
 
     final response = await _dio.put(
-      ApiEndpoints.perfil,
+      _Endpoints.perfil,
       data: data,
     );
     return _handleResponse(response);
@@ -39,7 +45,7 @@ class UsuarioService {
     required String newPassword,
   }) async {
     final response = await _dio.put(
-      ApiEndpoints.perfilPassword,
+      _Endpoints.password,
       data: {
         'password_actual': currentPassword,
         'password': newPassword,
@@ -55,7 +61,7 @@ class UsuarioService {
     });
 
     final response = await _dio.post(
-      ApiEndpoints.perfilIcono,
+      _Endpoints.icono,
       data: formData,
       options: Options(
         headers: {'Content-Type': 'multipart/form-data'},
@@ -66,7 +72,7 @@ class UsuarioService {
 
   /// Remove user avatar
   Future<Map<String, dynamic>> removeAvatar() async {
-    final response = await _dio.delete(ApiEndpoints.perfilIcono);
+    final response = await _dio.delete(_Endpoints.icono);
     return _handleResponse(response);
   }
 

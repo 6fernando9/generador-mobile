@@ -7,7 +7,7 @@ import '../../shared/widgets/skeleton_base.dart';
 // Provider for membership history
 final membershipHistoryProvider = FutureProvider<MembershipHistoryResponse>((ref) async {
   // TODO: Fetch from API
-  // final response = await ApiClient.instance.dio.get(ApiEndpoints.pagosHistorial);
+  // final response = await PagosService().getHistorial();
   // return MembershipHistoryResponse.fromJson(response.data);
   await Future.delayed(const Duration(milliseconds: 500));
   return MembershipHistoryResponse(

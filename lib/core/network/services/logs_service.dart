@@ -8,7 +8,16 @@ import 'package:mobile/data/models/generacion_models.dart'
 import 'package:mobile/data/models/log_models.dart';
 
 import '../api_client.dart';
-import '../api_endpoints.dart';
+
+/// Endpoints del historial de generaciones (`/api/logs`).
+class _Endpoints {
+  static const String misLogs = '/logs/mis-logs';
+  static const String misLogsFilterOptions = '/logs/mis-logs/filter-options';
+  static const String detalle = '/logs/:id';
+  static const String detallePublico = '/logs/public/:id';
+  static const String regenerarProyecto = '/logs/:id/regenerar-proyecto';
+  static const String regenerarReporte = '/logs/:id/regenerar-reporte';
+}
 
 /// Logs service handling the personal generation history.
 class LogsService {
@@ -34,7 +43,7 @@ class LogsService {
     DateTime? hasta,
   }) async {
     final response = await _dio.get(
-      ApiEndpoints.logsMisLogs,
+      _Endpoints.misLogs,
       queryParameters: _query({
         'page': page,
         'perPage': perPage,
@@ -57,24 +66,17 @@ class LogsService {
 
   /// Catálogos disponibles para los filtros avanzados.
   Future<LogFilterOptions> getFilterOptions() async {
-    final response = await _dio.get(ApiEndpoints.logsMisLogsFilterOptions);
+    final response = await _dio.get(_Endpoints.misLogsFilterOptions);
     return LogFilterOptions.fromJson(_handleResponse(response));
   }
 
   /// Get single log detail with diagram snapshot
-  Future<Map<String, dynamic>> getLogDetail(String id) async {
-    final response = await _dio.get(
-      ApiEndpoints.logsDetail.replaceAll(':id', id),
-    );
-    return _handleResponse(response);
-  }
-
   /// Detalle público de una generación (sin autenticación).
   ///
   /// Es el mismo dato que consume el visor web del diagrama.
   Future<LogDetalle> getLogDetallePublico(String id) async {
     final response = await _dio.get(
-      ApiEndpoints.logsPublicDetail.replaceAll(':id', id),
+      _Endpoints.detallePublico.replaceAll(':id', id),
     );
     return LogDetalle.fromJson(_handleResponse(response));
   }
@@ -82,7 +84,7 @@ class LogsService {
   /// Detalle autenticado de una generación.
   Future<LogDetalle> getLogDetalle(String id) async {
     final response = await _dio.get(
-      ApiEndpoints.logsDetail.replaceAll(':id', id),
+      _Endpoints.detalle.replaceAll(':id', id),
     );
     return LogDetalle.fromJson(_handleResponse(response));
   }
@@ -111,7 +113,7 @@ class LogsService {
     };
 
     final response = await _descargar(
-      ApiEndpoints.logsRegenerarProyecto.replaceAll(':id', id),
+      _Endpoints.regenerarProyecto.replaceAll(':id', id),
       body,
     );
     return ArchivoDescarga(
@@ -136,7 +138,7 @@ class LogsService {
     };
 
     final response = await _descargar(
-      ApiEndpoints.logsRegenerarReporte.replaceAll(':id', id),
+      _Endpoints.regenerarReporte.replaceAll(':id', id),
       body,
     );
     return ArchivoDescarga(

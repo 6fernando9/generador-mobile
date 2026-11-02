@@ -1,8 +1,12 @@
 // Catálogos del motor de generación (`GET /generacion/opciones`).
 import 'package:dio/dio.dart';
 import 'package:mobile/core/network/api_client.dart';
-import 'package:mobile/core/network/api_endpoints.dart';
 import 'package:mobile/data/models/generacion_models.dart';
+
+/// Endpoints del motor de generación (`/api/generacion`).
+class _Endpoints {
+  static const String opciones = '/generacion/opciones';
+}
 
 class GeneracionService {
   final Dio _dio;
@@ -11,7 +15,7 @@ class GeneracionService {
 
   /// Tipos de artefacto generables con sus lenguajes, frameworks y ORMs.
   Future<OpcionesGeneracion> opciones() async {
-    final response = await _dio.get(ApiEndpoints.generacionOpciones);
+    final response = await _dio.get(_Endpoints.opciones);
     final data = _data(response);
     return OpcionesGeneracion.fromJson(data);
   }
