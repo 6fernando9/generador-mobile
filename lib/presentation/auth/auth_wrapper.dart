@@ -73,36 +73,27 @@ class AuthController extends Notifier<AuthState> {
   }
 
   Future<void> _initialize() async {
-    // Check for stored session
-    final token = await SecureStorage.getUserToken();
-    final userDataJson = await SecureStorage.getUserData();
-
-    if (token != null && userDataJson != null) {
-      // Restore token to Dio headers for subsequent requests
-      ApiClient.instance.setAuthToken(token);
-
-      try {
-        // Try to validate session with /auth/me
-        final response = await _authService.me();
-        final authResponse = AuthResponse.fromJson(response);
-        await SecureStorage.saveUserToken(authResponse.token);
-        await SecureStorage.saveUserData(jsonEncode(authResponse.usuario.toJson()));
-        // Update Dio headers with fresh token
-        ApiClient.instance.setAuthToken(authResponse.token);
-        state = state.copyWith(
-          status: AuthStatus.authenticated,
-          user: authResponse.usuario,
-        );
-        // Load profile after successful auth restoration
-        _loadProfile();
-      } catch (e) {
-        // Session invalid, clear storage
+    // La sesión vive en la cookie httpOnly `jwt`, persistida por el
+    // CookieJar de Dio en documents/cookies. Validamos contra /auth/me.
+    try {
+      final response = await _authService.me();
+      final authResponse = AuthResponse.fromJson(response);
+      await SecureStorage.saveUserData(
+        jsonEncode(authResponse.usuario.toJson()),
+      );
+      state = state.copyWith(
+        status: AuthStatus.authenticated,
+        user: authResponse.usuario,
+      );
+      // Load profile after successful auth restoration
+      _loadProfile();
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401) {
         await SecureStorage.clearAuthData();
         await ApiClient.instance.clearCookies();
-        ApiClient.instance.clearAuthToken();
-        state = state.copyWith(status: AuthStatus.unauthenticated);
       }
-    } else {
+      state = state.copyWith(status: AuthStatus.unauthenticated);
+    } catch (_) {
       state = state.copyWith(status: AuthStatus.unauthenticated);
     }
   }
@@ -119,11 +110,8 @@ class AuthController extends Notifier<AuthState> {
       final response = await _authService.login(email: email, password: password);
       final authResponse = AuthResponse.fromJson(response);
 
-      // Save token and user data
-      await SecureStorage.saveUserToken(authResponse.token);
+      // La cookie `jwt` ya quedó guardada por el CookieJar de Dio
       await SecureStorage.saveUserData(jsonEncode(authResponse.usuario.toJson()));
-      // Set token in Dio headers for subsequent requests
-      ApiClient.instance.setAuthToken(authResponse.token);
 
       state = state.copyWith(
         status: AuthStatus.authenticated,
@@ -159,11 +147,8 @@ class AuthController extends Notifier<AuthState> {
       );
       final authResponse = AuthResponse.fromJson(response);
 
-      // Save token and user data
-      await SecureStorage.saveUserToken(authResponse.token);
+      // La cookie `jwt` ya quedó guardada por el CookieJar de Dio
       await SecureStorage.saveUserData(jsonEncode(authResponse.usuario.toJson()));
-      // Set token in Dio headers for subsequent requests
-      ApiClient.instance.setAuthToken(authResponse.token);
 
       state = state.copyWith(
         status: AuthStatus.authenticated,
@@ -193,7 +178,6 @@ class AuthController extends Notifier<AuthState> {
       await _authService.logout();
       await SecureStorage.clearAuthData();
       await ApiClient.instance.clearCookies();
-      ApiClient.instance.clearAuthToken();
     } catch (_) {
       // Ignore errors, still clear local state
     } finally {

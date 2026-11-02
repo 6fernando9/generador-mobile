@@ -68,16 +68,6 @@ class ApiClient {
     }
   }
 
-  /// Set auth token manually (if needed)
-  void setAuthToken(String token) {
-    dio.options.headers['Authorization'] = 'Bearer $token';
-  }
-
-  /// Clear auth token
-  void clearAuthToken() {
-    dio.options.headers.remove('Authorization');
-  }
-
   /// Get stored cookies for debugging
   Future<List<Cookie>> getCookies() async {
     final uri = Uri.parse(dio.options.baseUrl);

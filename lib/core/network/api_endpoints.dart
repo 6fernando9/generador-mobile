@@ -41,5 +41,13 @@ class ApiEndpoints {
       '/logs/mis-logs/filter-options';
   static const String logs = '/logs/';
   static const String logsDetail = '/logs/:id';
-  static const String logsRegenerar = '/logs/:id/regenerar';
+  static const String logsPublicDetail = '/logs/public/:id';
+  static const String logsRegenerarProyecto = '/logs/:id/regenerar-proyecto';
+  static const String logsRegenerarReporte = '/logs/:id/regenerar-reporte';
+
+  // Generación de artefactos (catálogos del modal de regeneración)
+  static const String generacionOpciones = '/generacion/opciones';
+
+  // Exportación SQL/XML (catálogos)
+  static const String exportarOpciones = '/exportar/opciones';
 }

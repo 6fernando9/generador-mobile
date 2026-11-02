@@ -181,6 +181,15 @@ Services (5 classes)
 ### Base URL
 `http://localhost:4000/api` (configurable via `--dart-define=API_BASE_URL`)
 
+### Visor web del diagrama
+`http://localhost:3000` (configurable via `--dart-define=WEB_BASE_URL`).
+El historial abre `AppConfig.diagramaUrl(logId)` en un WebView:
+`/p/{logId}/diagrama?view_only=true`. El snapshot llega por
+`GET /logs/public/:id` (sin cookie), por eso el visor no necesita sesión.
+La descarga NO se hace en el WebView: los modales de
+`lib/presentation/dashboard/history/download/` llaman a los endpoints
+protegidos con el Dio de la app (que sí lleva la cookie).
+
 ### Authentication Endpoints
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -220,9 +229,22 @@ Services (5 classes)
 ### Generation Logs (`/api/logs/`) - Auth required
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/` | Paginated history of generations (download history) |
+| GET | `/mis-logs` | Paginated personal history (`{items, meta}`) |
+| GET | `/mis-logs/filter-options` | Catálogos de filtros del usuario |
 | GET | `/:id` | Get generation detail with diagram snapshot |
-| POST | `/:id/regenerar` | Regenerate & download ZIP artifact |
+| GET | `/public/:id` | **Sin auth**: detalle + `database_configuration` (visor) |
+| POST | `/:id/regenerar-proyecto` | ZIP de backend/frontend/mobile (binario) |
+| POST | `/:id/regenerar-reporte` | SQL/XML desde el snapshot (binario) |
+
+Los endpoints que devuelven archivos responden binario y, si hay error,
+un JSON `{ message }`. El cliente usa `ResponseType.bytes` y decodifica el
+cuerpo para mostrar el mensaje.
+
+### Catálogos de descarga - Auth required
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/generacion/opciones` | Tipos de artefacto → lenguajes → frameworks → ORMs |
+| GET | `/exportar/opciones` | Tipos de reporte (SQL/XML) → bases destino / tipos XML |
 
 ---
 
@@ -289,7 +311,7 @@ Services (5 classes)
 | `lib/core/network/services/*.dart` | 5 service classes for API calls |
 | `lib/core/theme/app_theme.dart` | Light/dark Material 3 themes |
 | `lib/core/theme/neon_colors.dart` | Neon color palette |
-| `lib/core/storage/secure_storage.dart` | Secure token/user storage |
+| `lib/core/storage/secure_storage.dart` | Secure user data/theme storage (el JWT solo vive en la cookie) |
 | `lib/presentation/splash/splash_page.dart` | Animated opening screen |
 | `lib/presentation/auth/auth_wrapper.dart` | Auth state + route guard |
 | `lib/presentation/dashboard/dashboard_page.dart` | Main dashboard with 3 tabs |

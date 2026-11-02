@@ -4,7 +4,6 @@ import 'package:path_provider/path_provider.dart';
 
 /// Secure storage keys
 class SecureStorageKeys {
-  static const String userToken = 'user_token';
   static const String userData = 'user_data';
   static const String themeMode = 'theme_mode';
   static const String lastSync = 'last_sync';
@@ -77,20 +76,7 @@ class SecureStorage {
 
   /// Clear auth-related data
   static Future<void> clearAuthData() async {
-    await Future.wait([
-      delete(SecureStorageKeys.userToken),
-      delete(SecureStorageKeys.userData),
-    ]);
-  }
-
-  /// Save user token
-  static Future<void> saveUserToken(String token) async {
-    await write(SecureStorageKeys.userToken, token);
-  }
-
-  /// Get user token
-  static Future<String?> getUserToken() async {
-    return await read(SecureStorageKeys.userToken);
+    await delete(SecureStorageKeys.userData);
   }
 
   /// Save user data (JSON string)

@@ -4,17 +4,20 @@ import 'package:mobile/data/models/profile_models.dart';
 /// Auth response from login/register/me endpoints
 class AuthResponse {
   final Perfil usuario;
-  final String token;
+
+  /// Token informativo devuelto por el backend. La autenticación real viaja
+  /// en la cookie httpOnly `jwt` que maneja el CookieJar de Dio.
+  final String? token;
 
   const AuthResponse({
     required this.usuario,
-    required this.token,
+    this.token,
   });
 
   factory AuthResponse.fromJson(Map<String, dynamic> json) {
     return AuthResponse(
       usuario: Perfil.fromJson(json['usuario'] as Map<String, dynamic>),
-      token: json['token'] as String,
+      token: json['token'] as String?,
     );
   }
 

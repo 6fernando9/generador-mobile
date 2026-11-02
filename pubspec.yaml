@@ -35,6 +35,10 @@ dependencies:
   image: ^4.2.0
   path_provider: ^2.1.4
 
+  # WebView del diagrama + apertura de archivos descargados
+  webview_flutter: ^4.10.0
+  open_filex: ^4.5.0
+
   # UI: Skeleton loaders, animations
   shimmer: ^4.0.0
   flutter_animate: ^4.3.0

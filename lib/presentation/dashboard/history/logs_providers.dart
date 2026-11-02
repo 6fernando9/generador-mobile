@@ -72,3 +72,11 @@ final misLogsProvider = FutureProvider<PaginatedLogs>((ref) {
         hasta: filtros.hasta,
       );
 });
+
+/// Detalle público de una generación (sin cookie) para el visor y la descarga.
+final logDetallePublicoProvider = FutureProvider.family<LogDetalle, String>((
+  ref,
+  id,
+) {
+  return ref.watch(logsServiceProvider).getLogDetallePublico(id);
+});

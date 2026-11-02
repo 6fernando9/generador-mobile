@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/data/models/log_models.dart';
+import 'package:mobile/presentation/dashboard/history/log_diagram_page.dart';
 import 'package:mobile/presentation/dashboard/widgets/tech_icon.dart';
 import 'package:mobile/presentation/shared/widgets/neon_card.dart'
     show GlowCard;
@@ -86,8 +87,12 @@ class GenerationLogCard extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           IconButton(
-            onPressed: () {},
-            tooltip: 'Ver detalle',
+            onPressed: () => Navigator.of(context, rootNavigator: true).push(
+              MaterialPageRoute<void>(
+                builder: (_) => LogDiagramPage(log: log),
+              ),
+            ),
+            tooltip: 'Ver diagrama',
             icon: const Icon(Icons.visibility_rounded, size: 20),
             color: colorScheme.primary,
             visualDensity: VisualDensity.compact,

@@ -1,6 +1,8 @@
 // Modelos del historial personal de generaciones (`GET /logs/mis-logs`).
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:mobile/data/models/common_models.dart';
+import 'package:mobile/data/models/generacion_models.dart'
+    show DatabaseConfiguration;
 
 part 'log_models.freezed.dart';
 part 'log_models.g.dart';
@@ -98,6 +100,43 @@ extension LogGeneracionX on LogGeneracion {
     tipoReporte,
     tipoXml,
   ].whereType<LogDimensionRef>().toList();
+}
+
+/// Detalle de una generación (`GET /logs/:id` o `/logs/public/:id`).
+///
+/// El endpoint público no requiere autenticación y es el que alimenta el
+/// visor WebView; el autenticado se usa para operaciones del usuario.
+class LogDetalle {
+  final LogGeneracion log;
+  final DatabaseConfiguration? databaseConfiguration;
+  final Map<String, dynamic>? diagramaSnapshot;
+
+  const LogDetalle({
+    required this.log,
+    this.databaseConfiguration,
+    this.diagramaSnapshot,
+  });
+
+  factory LogDetalle.fromJson(Map<String, dynamic> json) {
+    final snapshot = json['diagrama_snapshot'];
+    final config = json['database_configuration'];
+    return LogDetalle(
+      log: LogGeneracion.fromJson(json),
+      databaseConfiguration: config is Map<String, dynamic>
+          ? DatabaseConfiguration.fromJson(config)
+          : null,
+      diagramaSnapshot: snapshot is Map<String, dynamic> ? snapshot : null,
+    );
+  }
+
+  /// La generación no tiene nodos ni aristas guardadas.
+  bool get sinDiagrama {
+    final nodes = diagramaSnapshot?['nodes'];
+    final edges = diagramaSnapshot?['edges'];
+    final n = nodes is List ? nodes.length : 0;
+    final e = edges is List ? edges.length : 0;
+    return n == 0 && e == 0;
+  }
 }
 
 /// Catálogos para los filtros avanzados (`/logs/mis-logs/filter-options`).

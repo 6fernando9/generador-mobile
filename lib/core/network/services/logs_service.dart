@@ -1,5 +1,10 @@
 // Logs Service for KrakenDraw - Handles generation logs/history endpoints.
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
+import 'package:mobile/data/models/archivo_descarga.dart';
+import 'package:mobile/data/models/generacion_models.dart'
+    show DatabaseConfiguration;
 import 'package:mobile/data/models/log_models.dart';
 
 import '../api_client.dart';
@@ -64,12 +69,152 @@ class LogsService {
     return _handleResponse(response);
   }
 
-  /// Regenerate and download ZIP artifact
-  Future<Map<String, dynamic>> regenerar(String id) async {
-    final response = await _dio.post(
-      ApiEndpoints.logsRegenerar.replaceAll(':id', id),
+  /// Detalle público de una generación (sin autenticación).
+  ///
+  /// Es el mismo dato que consume el visor web del diagrama.
+  Future<LogDetalle> getLogDetallePublico(String id) async {
+    final response = await _dio.get(
+      ApiEndpoints.logsPublicDetail.replaceAll(':id', id),
     );
-    return _handleResponse(response);
+    return LogDetalle.fromJson(_handleResponse(response));
+  }
+
+  /// Detalle autenticado de una generación.
+  Future<LogDetalle> getLogDetalle(String id) async {
+    final response = await _dio.get(
+      ApiEndpoints.logsDetail.replaceAll(':id', id),
+    );
+    return LogDetalle.fromJson(_handleResponse(response));
+  }
+
+  /// Regenera el proyecto (backend/frontend/mobile) desde el snapshot del log
+  /// y devuelve el ZIP como bytes.
+  Future<ArchivoDescarga> regenerarProyecto(
+    String id, {
+    DatabaseConfiguration? databaseConfiguration,
+    int? tipoArtefactoId,
+    int? lenguajeId,
+    int? frameworkId,
+    int? ormId,
+    int? arquitecturaId,
+    int? baseDatosId,
+  }) async {
+    final body = <String, dynamic>{
+      if (databaseConfiguration != null)
+        'database_configuration': databaseConfiguration.toJson(),
+      'tipo_artefacto_id': ?tipoArtefactoId,
+      'lenguaje_id': ?lenguajeId,
+      'framework_id': ?frameworkId,
+      'orm_id': ?ormId,
+      'arquitectura_id': ?arquitecturaId,
+      'base_datos_id': ?baseDatosId,
+    };
+
+    final response = await _descargar(
+      ApiEndpoints.logsRegenerarProyecto.replaceAll(':id', id),
+      body,
+    );
+    return ArchivoDescarga(
+      bytes: response.data ?? const [],
+      nombreSugerido: _nombreDesdeHeaders(response),
+    );
+  }
+
+  /// Regenera una exportación (SQL/XML) desde el snapshot del log.
+  Future<ArchivoDescarga> regenerarReporte(
+    String id, {
+    required int tipoReporteId,
+    int? baseDatosDestinoId,
+    int? tipoXmlId,
+    String? dbName,
+  }) async {
+    final body = <String, dynamic>{
+      'tipo_reporte_id': tipoReporteId,
+      'base_datos_destino_id': ?baseDatosDestinoId,
+      'tipo_xml_id': ?tipoXmlId,
+      if (dbName != null && dbName.trim().isNotEmpty) 'db_name': dbName.trim(),
+    };
+
+    final response = await _descargar(
+      ApiEndpoints.logsRegenerarReporte.replaceAll(':id', id),
+      body,
+    );
+    return ArchivoDescarga(
+      bytes: response.data ?? const [],
+      nombreSugerido: _nombreDesdeHeaders(response),
+    );
+  }
+
+  /// POST que devuelve un archivo binario; traduce los errores JSON del
+  /// backend a un mensaje legible.
+  Future<Response<List<int>>> _descargar(
+    String endpoint,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final response = await _dio.post<List<int>>(
+        endpoint,
+        data: body,
+        options: Options(
+          responseType: ResponseType.bytes,
+          receiveTimeout: const Duration(seconds: 120),
+          sendTimeout: const Duration(seconds: 120),
+        ),
+      );
+      final status = response.statusCode ?? 0;
+      final data = response.data;
+      // `validateStatus` del cliente acepta < 500, así que un 4xx llega aquí
+      // como respuesta exitosa; hay que tratarlo como error.
+      if ((status == 200 || status == 201) && data != null) {
+        return response;
+      }
+      throw DioException(
+        requestOptions: response.requestOptions,
+        response: response,
+        type: DioExceptionType.badResponse,
+        error: data,
+        message: 'No se pudo generar el archivo',
+      );
+    } on DioException catch (error) {
+      throw _traducirErrorBinario(error);
+    }
+  }
+
+  DioException _traducirErrorBinario(DioException error) {
+    final data = error.response?.data;
+    if (data is! List<int>) return error;
+
+    String mensaje = 'No se pudo generar el archivo';
+    try {
+      final texto = utf8.decode(data);
+      final json = jsonDecode(texto);
+      if (json is Map && json['message'] != null) {
+        mensaje = json['message'].toString();
+      }
+    } catch (_) {
+      // El cuerpo no era JSON: se conserva el mensaje genérico.
+    }
+
+    return DioException(
+      requestOptions: error.requestOptions,
+      response: error.response,
+      type: error.type,
+      error: {'message': mensaje},
+      message: mensaje,
+    );
+  }
+
+  /// Extrae `filename="..."` de `Content-Disposition`, si existe.
+  String? _nombreDesdeHeaders(Response<List<int>> response) {
+    final raw = response.headers.value('content-disposition');
+    if (raw == null || raw.isEmpty) return null;
+    final match = RegExp(
+      r'filename="?([^";]+)"?',
+      caseSensitive: false,
+    ).firstMatch(raw);
+    final nombre = match?.group(1)?.trim();
+    if (nombre == null || nombre.isEmpty) return null;
+    return nombre;
   }
 
   Map<String, dynamic> _query(Map<String, Object?> params) {

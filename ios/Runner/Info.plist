@@ -75,5 +75,11 @@
 	<!-- Photo library add permission (iOS 14+) -->
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>KrakenDraw necesita permiso para guardar fotos en la galería</string>
+	<!-- El visor del diagrama y la API se sirven por HTTP en desarrollo local -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
 </dict>
 </plist>
