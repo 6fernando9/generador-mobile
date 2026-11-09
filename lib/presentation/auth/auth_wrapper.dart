@@ -10,6 +10,7 @@ import 'package:mobile/core/theme/neon_colors.dart'
 import 'package:mobile/core/network/api_client.dart';
 import 'package:mobile/core/network/services/auth_service.dart';
 import 'package:mobile/core/storage/secure_storage.dart';
+import 'package:mobile/core/auth/entitlements.dart';
 import 'package:mobile/data/models/auth_models.dart';
 import 'package:mobile/data/models/profile_models.dart';
 import 'package:mobile/presentation/auth/login/login_page.dart';
@@ -31,31 +32,44 @@ enum AuthStatus {
 }
 
 /// Auth state
+const Object _authStateUnset = Object();
+
 class AuthState {
   final AuthStatus status;
   final Perfil? user;
   final String? errorMessage;
 
+  /// `true` cuando la sesión se restauró desde el perfil cacheado porque
+  /// `/auth/me` no respondió por red. Permite el chat offline y limita los
+  /// reportes a la caché.
+  final bool offline;
+
   const AuthState({
     this.status = AuthStatus.unknown,
     this.user,
     this.errorMessage,
+    this.offline = false,
   });
 
   AuthState copyWith({
     AuthStatus? status,
-    Perfil? user,
-    String? errorMessage,
+    Object? user = _authStateUnset,
+    Object? errorMessage = _authStateUnset,
+    bool? offline,
   }) {
     return AuthState(
       status: status ?? this.status,
-      user: user ?? this.user,
-      errorMessage: errorMessage ?? this.errorMessage,
+      user: identical(user, _authStateUnset) ? this.user : user as Perfil?,
+      errorMessage: identical(errorMessage, _authStateUnset)
+          ? this.errorMessage
+          : errorMessage as String?,
+      offline: offline ?? this.offline,
     );
   }
 
   bool get isAuthenticated => status == AuthStatus.authenticated;
-  bool get isLoading => status == AuthStatus.authenticating || status == AuthStatus.unknown;
+  bool get isLoading =>
+      status == AuthStatus.authenticating || status == AuthStatus.unknown;
 }
 
 /// Auth controller provider (Riverpod 3.x - NotifierProvider)
@@ -81,26 +95,76 @@ class AuthController extends Notifier<AuthState> {
       await SecureStorage.saveUserData(
         jsonEncode(authResponse.usuario.toJson()),
       );
+      // Validación en línea: refresca la caché de derechos (7 días offline).
+      await Entitlements.saveFromProfile(authResponse.usuario);
       state = state.copyWith(
         status: AuthStatus.authenticated,
         user: authResponse.usuario,
+        offline: false,
       );
-      // Load profile after successful auth restoration
-      _loadProfile();
     } on DioException catch (e) {
       if (e.response?.statusCode == 401) {
         await SecureStorage.clearAuthData();
         await ApiClient.instance.clearCookies();
+        await Entitlements.clear();
+        state = state.copyWith(
+          status: AuthStatus.unauthenticated,
+          user: null,
+          offline: false,
+        );
+        return;
       }
-      state = state.copyWith(status: AuthStatus.unauthenticated);
+
+      // Sin red: se conserva la sesión con el último perfil guardado. El
+      // backend sigue siendo la autoridad cuando vuelva la conexión.
+      final cached = await _loadCachedProfile();
+      if (cached != null) {
+        state = state.copyWith(
+          status: AuthStatus.authenticated,
+          user: cached,
+          offline: true,
+        );
+      } else {
+        state = state.copyWith(
+          status: AuthStatus.unauthenticated,
+          user: null,
+          offline: false,
+        );
+      }
     } catch (_) {
-      state = state.copyWith(status: AuthStatus.unauthenticated);
+      final cached = await _loadCachedProfile();
+      if (cached != null) {
+        state = state.copyWith(
+          status: AuthStatus.authenticated,
+          user: cached,
+          offline: true,
+        );
+      } else {
+        state = state.copyWith(
+          status: AuthStatus.unauthenticated,
+          user: null,
+          offline: false,
+        );
+      }
     }
   }
 
-  void _loadProfile() {
-    // Trigger profile loading after auth is established
-    // This will be handled by the profile page when it's shown
+  Future<Perfil?> _loadCachedProfile() async {
+    try {
+      final raw = await SecureStorage.getUserData();
+      if (raw == null || raw.isEmpty) return null;
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) {
+        return Perfil.fromJson(decoded);
+      }
+      // Compatibilidad con el formato AuthResponse { usuario: {...} }.
+      if (decoded is Map && decoded['usuario'] is Map<String, dynamic>) {
+        return Perfil.fromJson(decoded['usuario'] as Map<String, dynamic>);
+      }
+    } catch (_) {
+      return null;
+    }
+    return null;
   }
 
   Future<void> login(String email, String password, bool rememberMe) async {
@@ -112,10 +176,12 @@ class AuthController extends Notifier<AuthState> {
 
       // La cookie `jwt` ya quedó guardada por el CookieJar de Dio
       await SecureStorage.saveUserData(jsonEncode(authResponse.usuario.toJson()));
+      await Entitlements.saveFromProfile(authResponse.usuario);
 
       state = state.copyWith(
         status: AuthStatus.authenticated,
         user: authResponse.usuario,
+        offline: false,
       );
     } on DioException catch (e) {
       String message = 'Error de autenticación';
@@ -149,10 +215,12 @@ class AuthController extends Notifier<AuthState> {
 
       // La cookie `jwt` ya quedó guardada por el CookieJar de Dio
       await SecureStorage.saveUserData(jsonEncode(authResponse.usuario.toJson()));
+      await Entitlements.saveFromProfile(authResponse.usuario);
 
       state = state.copyWith(
         status: AuthStatus.authenticated,
         user: authResponse.usuario,
+        offline: false,
       );
     } on DioException catch (e) {
       String message = 'Error de registro';
@@ -178,10 +246,15 @@ class AuthController extends Notifier<AuthState> {
       await _authService.logout();
       await SecureStorage.clearAuthData();
       await ApiClient.instance.clearCookies();
+      await Entitlements.clear();
     } catch (_) {
       // Ignore errors, still clear local state
     } finally {
-      state = state.copyWith(status: AuthStatus.unauthenticated, user: null);
+      state = state.copyWith(
+        status: AuthStatus.unauthenticated,
+        user: null,
+        offline: false,
+      );
       // Navigate to login using global navigator key
       navigatorKey.currentContext?.go('/auth/login');
     }

@@ -186,6 +186,21 @@ class Perfil {
     );
   }
 
+  /// Administrador del sistema. Se infiere en el dispositivo: el backend no
+  /// devuelve esta bandera.
+  bool get esAdmin => roles.any(
+    (r) =>
+        r.scope == 'sistema' &&
+        (r.nombreCode ?? '').toLowerCase() == 'administrador',
+  );
+
+  /// El usuario tiene una suscripción con plan Pro.
+  bool get tienePlanPro =>
+      (plan?.nombreCode ?? plan?.nombre ?? '').toLowerCase() == 'pro';
+
+  /// Regla única del producto: administrador exento; en otro caso, plan Pro.
+  bool get puedeReportes => esAdmin || tienePlanPro;
+
   /// Get primary role name for display
   String get primaryRoleName => roles.isNotEmpty ? roles.first.nombre : 'Sin rol';
 

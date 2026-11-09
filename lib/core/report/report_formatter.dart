@@ -1,0 +1,235 @@
+import 'package:intl/intl.dart';
+import 'package:mobile/core/report/report_intent_parser.dart';
+import 'package:mobile/data/models/dashboard_actividad.dart';
+import 'package:mobile/data/models/dashboard_proyectos.dart';
+import 'package:mobile/data/models/dashboard_resumen.dart';
+import 'package:mobile/data/models/dashboard_tecnologias.dart';
+import 'package:mobile/data/models/dashboard_tendencia.dart';
+import 'package:mobile/data/models/report_models.dart';
+
+/// Convierte el payload crudo del backend en una respuesta legible.
+///
+/// Es determinista: el modelo local nunca calcula ni inventa cifras.
+class ReportFormatter {
+  const ReportFormatter._();
+
+  static final DateFormat _fechaHora = DateFormat('dd/MM/yyyy HH:mm');
+
+  static String _pct(double value) {
+    final normalized = value <= 1 ? value * 100 : value;
+    return '${normalized.toStringAsFixed(1)}%';
+  }
+
+  static String _plural(int n, String singular, String plural) =>
+      '$n ${n == 1 ? singular : plural}';
+
+  static String build({
+    required ReportIntent intent,
+    required ReporteConsulta reporte,
+    required bool desdeCache,
+  }) {
+    final body = switch (intent.metrica) {
+      'resumen' => _resumen(reporte.payload),
+      'tecnologias' => _tecnologias(reporte.payload, intent.categoria),
+      'actividad' => _actividad(reporte.payload),
+      'tendencia' => _tendencia(reporte.payload),
+      'proyectos' => _proyectos(reporte.payload),
+      _ => 'No pude interpretar ese reporte.',
+    };
+
+    final sello = desdeCache
+        ? 'Datos al ${_fechaHora.format(reporte.generadoEn)} '
+              '(guardados sin conexión).'
+        : 'Generado el ${_fechaHora.format(reporte.generadoEn)} '
+              'para ${reporte.rango.etiqueta}.';
+
+    return '$body\n\n$sello';
+  }
+
+  static String _resumen(Map<String, dynamic> json) {
+    final data = DashboardResumen.fromJson(json);
+    final buffer = StringBuffer();
+
+    if (data.total == 0) {
+      return 'No tienes generaciones registradas todavía.';
+    }
+
+    buffer.write(
+      'Hoy registraste ${_plural(data.hoy, 'generación', 'generaciones')} '
+      'y ayer ${data.ayer}. ',
+    );
+    buffer.write(
+      'Esta semana llevas ${data.semana} '
+      '(la semana pasada fueron ${data.semanaPasada}). ',
+    );
+    buffer.write(
+      'Este mes acumulas ${data.mes} '
+      '(el mes pasado fueron ${data.mesPasado}). ',
+    );
+    buffer.write('En total tienes ${data.total} generaciones históricas.');
+
+    final deltas = <String>[];
+    if (data.deltas.hoy != null) {
+      deltas.add('hoy ${_signed(data.deltas.hoy!)}%');
+    }
+    if (data.deltas.semana != null) {
+      deltas.add('semana ${_signed(data.deltas.semana!)}%');
+    }
+    if (data.deltas.mes != null) {
+      deltas.add('mes ${_signed(data.deltas.mes!)}%');
+    }
+    if (deltas.isNotEmpty) {
+      buffer.write('\nVariación frente al período anterior: ${deltas.join(', ')}.');
+    }
+    return buffer.toString();
+  }
+
+  static String _signed(double value) =>
+      '${value >= 0 ? '+' : ''}${value.toStringAsFixed(1)}';
+
+  static String _tecnologias(Map<String, dynamic> json, String? categoria) {
+    final data = DashboardTecnologias.fromJson(json);
+    if (data.total == 0) {
+      return 'No hay generaciones en el período consultado, así que todavía '
+          'no puedo calcular tecnologías usadas.';
+    }
+
+    if (categoria != null) {
+      final items = data.itemsDe(_categoria(categoria));
+      if (items.isEmpty) {
+        return 'No registraste ${_nombreCategoria(categoria)} en el período '
+            'consultado.';
+      }
+      final top = items.take(5).toList();
+      final lines = <String>['${_nombreCategoria(categoria)} más usados:'];
+      for (var i = 0; i < top.length; i++) {
+        lines.add(
+          '${i + 1}. ${top[i].nombre}: ${top[i].total} '
+          '(${_pct(top[i].porcentaje)})',
+        );
+      }
+      return lines.join('\n');
+    }
+
+    final bloques = <String>[];
+    for (final cat in const [
+      TecnologiaCategoria.lenguajes,
+      TecnologiaCategoria.frameworks,
+      TecnologiaCategoria.arquitecturas,
+      TecnologiaCategoria.orms,
+      TecnologiaCategoria.basesDatos,
+    ]) {
+      final items = data.itemsDe(cat);
+      if (items.isEmpty) continue;
+      final top = items.take(3).map((item) {
+        return '${item.nombre} (${item.total})';
+      }).join(', ');
+      bloques.add('${cat.label}: $top');
+    }
+
+    if (bloques.isEmpty) {
+      return 'No hay tecnologías registradas en el período consultado.';
+    }
+    return 'Tecnologías más usadas en el período:\n${bloques.join('\n')}';
+  }
+
+  static TecnologiaCategoria _categoria(String code) => switch (code) {
+    'lenguajes' => TecnologiaCategoria.lenguajes,
+    'frameworks' => TecnologiaCategoria.frameworks,
+    'arquitecturas' => TecnologiaCategoria.arquitecturas,
+    'orm' => TecnologiaCategoria.orms,
+    'bd' => TecnologiaCategoria.basesDatos,
+    _ => TecnologiaCategoria.lenguajes,
+  };
+
+  static String _nombreCategoria(String code) => switch (code) {
+    'lenguajes' => 'Lenguajes',
+    'frameworks' => 'Frameworks',
+    'arquitecturas' => 'Arquitecturas',
+    'orm' => 'ORM',
+    'bd' => 'Bases de datos',
+    _ => 'Tecnologías',
+  };
+
+  static String _actividad(Map<String, dynamic> json) {
+    final data = DashboardActividad.fromJson(json);
+    if (data.total == 0) {
+      return 'No hay actividad registrada en el período consultado.';
+    }
+
+    final buffer = StringBuffer(
+      'Total de generaciones en el período: ${data.total}.',
+    );
+
+    final dias = [...data.porDiaSemana]..sort((a, b) => b.total.compareTo(a.total));
+    final topDias = dias.where((d) => d.total > 0).take(3).toList();
+    if (topDias.isNotEmpty) {
+      buffer.write(
+        '\nDías con más actividad: '
+        '${topDias.map((d) => '${d.nombre} (${d.total})').join(', ')}.',
+      );
+    }
+
+    final horas = [...data.porHora]..sort((a, b) => b.total.compareTo(a.total));
+    final topHoras = horas.where((h) => h.total > 0).take(3).toList();
+    if (topHoras.isNotEmpty) {
+      buffer.write(
+        '\nHoras con más actividad: '
+        '${topHoras.map((h) => '${h.hora.toString().padLeft(2, '0')}:00 (${h.total})').join(', ')}.',
+      );
+    }
+
+    return buffer.toString();
+  }
+
+  static String _tendencia(Map<String, dynamic> json) {
+    final data = DashboardTendencia.fromJson(json);
+    if (data.total == 0 || data.serie.isEmpty) {
+      return 'No hay generaciones registradas en el período consultado.';
+    }
+
+    final serie = data.serie;
+    final pico = serie.reduce((a, b) => a.total >= b.total ? a : b);
+    final buffer = StringBuffer(
+      'Tendencia con granularidad ${data.granularidad.isEmpty ? 'diaria' : data.granularidad}: '
+      '${data.total} generaciones en ${_plural(serie.length, 'período', 'períodos')}.',
+    );
+    buffer.write(
+      '\nPrimer período: ${serie.first.periodo} con ${serie.first.total}. '
+      'Último: ${serie.last.periodo} con ${serie.last.total}.',
+    );
+    buffer.write('\nPico: ${pico.periodo} con ${_plural(pico.total, 'generación', 'generaciones')}.');
+
+    final tipos = <String, int>{};
+    for (final point in serie) {
+      point.porTipo.forEach((key, value) => tipos[key] = (tipos[key] ?? 0) + value);
+    }
+    if (tipos.isNotEmpty) {
+      final ordenados = tipos.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+      buffer.write(
+        '\nPor tipo: '
+        '${ordenados.map((e) => '${e.key} ${e.value}').join(', ')}.',
+      );
+    }
+    return buffer.toString();
+  }
+
+  static String _proyectos(Map<String, dynamic> json) {
+    final data = DashboardProyectos.fromJson(json);
+    final proyectos = data.proyectos;
+    if (proyectos.isEmpty) {
+      return 'No hay proyectos con generaciones en el período consultado.';
+    }
+
+    final top = proyectos.take(5).toList();
+    final lines = <String>['Proyectos con más generaciones:'];
+    for (var i = 0; i < top.length; i++) {
+      final p = top[i];
+      lines.add(
+        '${i + 1}. ${p.nombre}: ${p.total} (${_pct(p.porcentaje)})',
+      );
+    }
+    return lines.join('\n');
+  }
+}

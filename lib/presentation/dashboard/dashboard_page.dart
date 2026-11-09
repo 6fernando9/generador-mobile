@@ -39,11 +39,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
   static const List<_DashboardTab> _tabs = [
     _DashboardTab(icon: Icons.insights_rounded, label: 'Resumen', index: 0),
     _DashboardTab(icon: Icons.download_rounded, label: 'Historial', index: 1),
-    _DashboardTab(
-      icon: Icons.credit_card_rounded,
-      label: 'Membresías',
-      index: 2,
-    ),
   ];
 
   @override
@@ -92,7 +87,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                   children: [
                     _buildOverviewTab(context),
                     _buildHistoryTab(context),
-                    _buildMembershipsTab(context),
                   ],
                 ),
               ),
@@ -308,11 +302,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
                     ),
                   ],
                   child: NeonButton(
-                    label: 'Ver Planes',
-                    icon: Icons.view_module_rounded,
+                    label: 'Mi plan',
+                    icon: Icons.workspace_premium_rounded,
                     style: NeonButtonStyle.secondary,
                     isFullWidth: true,
-                    onPressed: () => _tabController.animateTo(2),
+                    // onPressed: () => context.push('/profile'),
                   ),
                 ),
               ),
@@ -327,132 +321,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage>
 
   Widget _buildHistoryTab(BuildContext context) {
     return const GenerationHistoryView();
-  }
-
-  Widget _buildMembershipsTab(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: () async {
-        // TODO: Refresh membership data
-        await Future.delayed(const Duration(seconds: 1));
-      },
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const SizedBox(height: 8),
-
-          // Subscription header
-          Animate(
-            effects: [FadeEffect(duration: 400.ms)],
-            child: GlowCard(
-              glowColor: NeonColors.getNeon(
-                'green',
-                Theme.of(context).brightness == Brightness.dark,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Animate(
-                    effects: [FadeEffect(duration: 400.ms)],
-                    child: Text(
-                      'Tu Suscripción',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      NeonBadge(
-                        label: 'Premium',
-                        icon: Icons.star_rounded,
-                        color: NeonColors.green,
-                        style: NeonBadgeStyle.filled,
-                        glowColor: NeonColors.getGlow(
-                          'green',
-                          Theme.of(context).brightness == Brightness.dark,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Vige hasta 31/12/2024',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface
-                                    .withValues(alpha: 0.7),
-                              ),
-                        ),
-                      ),
-                      NeonButton(
-                        label: 'Renovar',
-                        icon: Icons.refresh_rounded,
-                        style: NeonButtonStyle.outline,
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Función en desarrollo',
-                                style: GoogleFonts.inter(),
-                              ),
-                              backgroundColor: Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest,
-                            ),
-                          );
-                        },
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Membership history header
-          Animate(
-            effects: [FadeEffect(duration: 400.ms)],
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Historial de Pagos',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () {
-                    // TODO: Implement view all
-                  },
-                  icon: const Icon(Icons.list_rounded, size: 18),
-                  label: Text(
-                    'Ver todo',
-                    style: GoogleFonts.inter(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Payment history cards
-          MembershipHistoryList(),
-        ],
-      ),
-    );
   }
 
   Widget _buildSectionHeader(
