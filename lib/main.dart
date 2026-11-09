@@ -1,5 +1,7 @@
 // KrakenDraw Flutter Mobile App - Main Entry Point
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -215,6 +217,11 @@ final appInitializationProvider = FutureProvider<void>((ref) async {
 /// Main entry point
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize sqflite FFI for desktop platforms (Linux, Windows, macOS)
+  if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+    databaseFactory = databaseFactoryFfi;
+  }
 
   // Initialize SecureStorage
   await SecureStorage.init();

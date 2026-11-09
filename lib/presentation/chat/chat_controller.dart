@@ -442,7 +442,7 @@ class ChatController extends Notifier<ChatState> {
     // Replay corto del historial persistido para dar contexto al modelo.
     final previos = await LocalDatabase.instance.listMessages(
       conversationId,
-      limit: 7,
+      limit: 3,
     );
     for (final message in previos.take(previos.length - 1)) {
       if (message.contenido.trim().isEmpty) continue;

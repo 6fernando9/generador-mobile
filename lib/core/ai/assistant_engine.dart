@@ -113,9 +113,8 @@ class AssistantEngine {
     }
 
     final stat = await file.stat();
-    final signature =
-        '${stat.size}|${stat.modified.millisecondsSinceEpoch}|'
-        '${AssistantModelManifest.sha256}';
+    // Firma sin mtime: solo tamaño + SHA-256 (mtime cambia al acceder al archivo)
+    final signature = '${stat.size}|${AssistantModelManifest.sha256}';
 
     if (!force) {
       final prefs = await SharedPreferences.getInstance();

@@ -27,9 +27,9 @@ class AssistantModelManifest {
 
   /// Ventana de contexto total (entrada + salida). El archivo declara 4096;
   /// 2048 deja margen para el prompt del sistema y el historial reciente.
-  static const int maxTokens = 2048;
+  static const int maxTokens = 4096;
 
-  static const int maxOutputTokens = 512;
+  static const int maxOutputTokens = 1024;
 
   static String get sizeLabel {
     final gb = sizeBytes / (1024 * 1024 * 1024);
