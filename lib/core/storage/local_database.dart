@@ -13,7 +13,7 @@ class LocalDatabase {
   static final LocalDatabase instance = LocalDatabase._();
 
   static const String _dbName = 'kraken_draw_local.db';
-  static const int _version = 1;
+  static const int _version = 2;
 
   Database? _db;
 
@@ -26,6 +26,7 @@ class LocalDatabase {
       path,
       version: _version,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -38,6 +39,7 @@ class LocalDatabase {
     await db.execute('''
       CREATE TABLE conversaciones (
         id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
         titulo TEXT NOT NULL,
         creada_en INTEGER NOT NULL,
         actualizada_en INTEGER NOT NULL
@@ -47,6 +49,7 @@ class LocalDatabase {
     await db.execute('''
       CREATE TABLE mensajes (
         id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
         conversacion_id TEXT NOT NULL,
         rol TEXT NOT NULL,
         contenido TEXT NOT NULL,
@@ -60,7 +63,7 @@ class LocalDatabase {
 
     await db.execute(
       'CREATE INDEX idx_mensajes_conversacion '
-      'ON mensajes(conversacion_id, creado_en)',
+      'ON mensajes(user_id, conversacion_id, creado_en)',
     );
 
     await db.execute('''
@@ -80,6 +83,7 @@ class LocalDatabase {
     await db.execute('''
       CREATE TABLE derechos (
         id INTEGER PRIMARY KEY CHECK (id = 1),
+        user_id TEXT NOT NULL,
         es_admin INTEGER NOT NULL,
         puede_reportes INTEGER NOT NULL,
         plan_code TEXT,
@@ -89,24 +93,44 @@ class LocalDatabase {
     ''');
   }
 
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Añadir user_id a conversaciones
+      await db.execute('ALTER TABLE conversaciones ADD COLUMN user_id TEXT NOT NULL DEFAULT ''unknown''');
+      // Añadir user_id a mensajes
+      await db.execute('ALTER TABLE mensajes ADD COLUMN user_id TEXT NOT NULL DEFAULT ''unknown''');
+      // Recrear índice con user_id
+      await db.execute('DROP INDEX IF EXISTS idx_mensajes_conversacion');
+      await db.execute(
+        'CREATE INDEX idx_mensajes_conversacion '
+        'ON mensajes(user_id, conversacion_id, creado_en)',
+      );
+      // Añadir user_id a derechos
+      await db.execute('ALTER TABLE derechos ADD COLUMN user_id TEXT NOT NULL DEFAULT ''unknown''');
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Conversaciones
   // ---------------------------------------------------------------------------
 
-  Future<void> insertConversation(ChatConversation conversation) async {
+  Future<void> insertConversation(ChatConversation conversation, String userId) async {
     final db = await database;
     await db.insert('conversaciones', {
       'id': conversation.id,
+      'user_id': userId,
       'titulo': conversation.titulo,
       'creada_en': conversation.creadaEn.millisecondsSinceEpoch,
       'actualizada_en': conversation.actualizadaEn.millisecondsSinceEpoch,
     });
   }
 
-  Future<List<ChatConversation>> listConversations() async {
+  Future<List<ChatConversation>> listConversations(String userId) async {
     final db = await database;
     final rows = await db.query(
       'conversaciones',
+      where: 'user_id = ?',
+      whereArgs: [userId],
       orderBy: 'actualizada_en DESC',
     );
     return rows.map((row) {
@@ -124,6 +148,7 @@ class LocalDatabase {
   }
 
   Future<void> touchConversation(
+    String userId,
     String id, {
     String? titulo,
     DateTime? actualizadaEn,
@@ -136,40 +161,49 @@ class LocalDatabase {
         'actualizada_en':
             (actualizadaEn ?? DateTime.now()).millisecondsSinceEpoch,
       },
-      where: 'id = ?',
-      whereArgs: [id],
+      where: 'id = ? AND user_id = ?',
+      whereArgs: [id, userId],
     );
   }
 
-  Future<void> deleteConversation(String id) async {
+  Future<void> deleteConversation(String userId, String id) async {
     final db = await database;
-    await db.delete('conversaciones', where: 'id = ?', whereArgs: [id]);
+    await db.delete(
+      'conversaciones',
+      where: 'id = ? AND user_id = ?',
+      whereArgs: [id, userId],
+    );
   }
 
   // ---------------------------------------------------------------------------
   // Mensajes
   // ---------------------------------------------------------------------------
 
-  Future<void> insertMessage(ChatMessage message) async {
+  Future<void> insertMessage(ChatMessage message, String userId) async {
     final db = await database;
+    final map = message.toMap();
+    map['user_id'] = userId;
     await db.insert(
       'mensajes',
-      message.toMap(),
+      map,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
-  Future<void> updateMessage(ChatMessage message) async {
+  Future<void> updateMessage(ChatMessage message, String userId) async {
     final db = await database;
+    final map = message.toMap();
+    map['user_id'] = userId;
     await db.update(
       'mensajes',
-      message.toMap(),
-      where: 'id = ?',
-      whereArgs: [message.id],
+      map,
+      where: 'id = ? AND user_id = ?',
+      whereArgs: [message.id, userId],
     );
   }
 
   Future<List<ChatMessage>> listMessages(
+    String userId,
     String conversationId, {
     int? limit,
   }) async {
@@ -178,15 +212,15 @@ class LocalDatabase {
     if (limit == null) {
       rows = await db.query(
         'mensajes',
-        where: 'conversacion_id = ?',
-        whereArgs: [conversationId],
+        where: 'conversacion_id = ? AND user_id = ?',
+        whereArgs: [conversationId, userId],
         orderBy: 'creado_en ASC',
       );
     } else {
       rows = await db.query(
         'mensajes',
-        where: 'conversacion_id = ?',
-        whereArgs: [conversationId],
+        where: 'conversacion_id = ? AND user_id = ?',
+        whereArgs: [conversationId, userId],
         orderBy: 'creado_en DESC',
         limit: limit,
       );
@@ -195,12 +229,12 @@ class LocalDatabase {
     return rows.map(ChatMessage.fromMap).toList();
   }
 
-  Future<void> clearMessages(String conversationId) async {
+  Future<void> clearMessages(String userId, String conversationId) async {
     final db = await database;
     await db.delete(
       'mensajes',
-      where: 'conversacion_id = ?',
-      whereArgs: [conversationId],
+      where: 'conversacion_id = ? AND user_id = ?',
+      whereArgs: [conversationId, userId],
     );
   }
 
@@ -246,27 +280,29 @@ class LocalDatabase {
   // Derechos (entitlements)
   // ---------------------------------------------------------------------------
 
-  Future<void> saveEntitlement(CachedEntitlement entitlement) async {
+  Future<void> saveEntitlement(CachedEntitlement entitlement, String userId) async {
     final db = await database;
+    final map = entitlement.toMap();
+    map['user_id'] = userId;
     await db.insert(
       'derechos',
-      entitlement.toMap(),
+      map,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
-  Future<CachedEntitlement?> loadEntitlement() async {
+  Future<CachedEntitlement?> loadEntitlement(String userId) async {
     final db = await database;
-    final rows = await db.query('derechos', where: 'id = 1', limit: 1);
+    final rows = await db.query('derechos', where: 'id = 1 AND user_id = ?', whereArgs: [userId], limit: 1);
     if (rows.isEmpty) return null;
     return CachedEntitlement.fromMap(rows.first);
   }
 
-  Future<void> clearAll() async {
+  Future<void> clearAll(String userId) async {
     final db = await database;
-    await db.delete('mensajes');
-    await db.delete('conversaciones');
+    await db.delete('mensajes', where: 'user_id = ?', whereArgs: [userId]);
+    await db.delete('conversaciones', where: 'user_id = ?', whereArgs: [userId]);
     await db.delete('cache_reportes');
-    await db.delete('derechos');
+    await db.delete('derechos', where: 'user_id = ?', whereArgs: [userId]);
   }
 }

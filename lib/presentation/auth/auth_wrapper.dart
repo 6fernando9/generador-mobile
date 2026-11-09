@@ -104,9 +104,10 @@ class AuthController extends Notifier<AuthState> {
       );
     } on DioException catch (e) {
       if (e.response?.statusCode == 401) {
+        final currentUserId = state.user?.id?.toString() ?? 'unknown';
         await SecureStorage.clearAuthData();
         await ApiClient.instance.clearCookies();
-        await Entitlements.clear();
+        await Entitlements.clear(currentUserId);
         state = state.copyWith(
           status: AuthStatus.unauthenticated,
           user: null,
@@ -244,9 +245,10 @@ class AuthController extends Notifier<AuthState> {
   Future<void> logout() async {
     try {
       await _authService.logout();
+      final currentUserId = state.user?.id?.toString() ?? 'unknown';
       await SecureStorage.clearAuthData();
       await ApiClient.instance.clearCookies();
-      await Entitlements.clear();
+      await Entitlements.clear(currentUserId);
     } catch (_) {
       // Ignore errors, still clear local state
     } finally {

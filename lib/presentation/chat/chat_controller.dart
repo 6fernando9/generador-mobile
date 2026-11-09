@@ -106,6 +106,8 @@ class ChatController extends Notifier<ChatState> {
   CancelToken? _cancelToken;
   bool _initialized = false;
 
+  String get _currentUserId => ref.read(authControllerProvider).user?.id?.toString() ?? 'unknown';
+
   @override
   ChatState build() {
     ref.onDispose(() {
@@ -135,9 +137,10 @@ class ChatController extends Notifier<ChatState> {
 
   Future<void> _loadConversations() async {
     try {
-      final conversaciones = await LocalDatabase.instance.listConversations();
+      final userId = _currentUserId;
+      final conversaciones = await LocalDatabase.instance.listConversations(userId);
       if (conversaciones.isEmpty) {
-        final conversation = await _createConversation();
+        final conversation = await _createConversation(userId);
         state = state.copyWith(
           conversaciones: [conversation],
           conversacionId: conversation.id,
@@ -146,7 +149,7 @@ class ChatController extends Notifier<ChatState> {
         return;
       }
       final actual = conversaciones.first;
-      final mensajes = await LocalDatabase.instance.listMessages(actual.id);
+      final mensajes = await LocalDatabase.instance.listMessages(userId, actual.id);
       state = state.copyWith(
         conversaciones: conversaciones,
         conversacionId: actual.id,
@@ -157,7 +160,7 @@ class ChatController extends Notifier<ChatState> {
     }
   }
 
-  Future<ChatConversation> _createConversation() async {
+  Future<ChatConversation> _createConversation(String userId) async {
     final now = DateTime.now();
     final conversation = ChatConversation(
       id: _id(),
@@ -165,7 +168,7 @@ class ChatController extends Notifier<ChatState> {
       creadaEn: now,
       actualizadaEn: now,
     );
-    await LocalDatabase.instance.insertConversation(conversation);
+    await LocalDatabase.instance.insertConversation(conversation, userId);
     return conversation;
   }
 
@@ -238,8 +241,9 @@ class ChatController extends Notifier<ChatState> {
 
   Future<void> nuevaConversacion() async {
     await _closeChat();
-    final conversation = await _createConversation();
-    final conversaciones = await LocalDatabase.instance.listConversations();
+    final userId = _currentUserId;
+    final conversation = await _createConversation(userId);
+    final conversaciones = await LocalDatabase.instance.listConversations(userId);
     state = state.copyWith(
       conversaciones: conversaciones,
       conversacionId: conversation.id,
@@ -252,9 +256,10 @@ class ChatController extends Notifier<ChatState> {
   Future<void> seleccionarConversacion(String id) async {
     if (id == state.conversacionId || state.generando) return;
     await _closeChat();
-    final mensajes = await LocalDatabase.instance.listMessages(id);
-    await LocalDatabase.instance.touchConversation(id);
-    final conversaciones = await LocalDatabase.instance.listConversations();
+    final userId = _currentUserId;
+    final mensajes = await LocalDatabase.instance.listMessages(userId, id);
+    await LocalDatabase.instance.touchConversation(userId, id);
+    final conversaciones = await LocalDatabase.instance.listConversations(userId);
     state = state.copyWith(
       conversaciones: conversaciones,
       conversacionId: id,
@@ -265,12 +270,13 @@ class ChatController extends Notifier<ChatState> {
   }
 
   Future<void> eliminarConversacion(String id) async {
-    await LocalDatabase.instance.deleteConversation(id);
-    final conversaciones = await LocalDatabase.instance.listConversations();
+    final userId = _currentUserId;
+    await LocalDatabase.instance.deleteConversation(userId, id);
+    final conversaciones = await LocalDatabase.instance.listConversations(userId);
     if (id == state.conversacionId) {
       await _closeChat();
       if (conversaciones.isEmpty) {
-        final conversation = await _createConversation();
+        final conversation = await _createConversation(userId);
         state = state.copyWith(
           conversaciones: [conversation],
           conversacionId: conversation.id,
@@ -279,7 +285,7 @@ class ChatController extends Notifier<ChatState> {
         return;
       }
       final siguiente = conversaciones.first;
-      final mensajes = await LocalDatabase.instance.listMessages(siguiente.id);
+      final mensajes = await LocalDatabase.instance.listMessages(userId, siguiente.id);
       state = state.copyWith(
         conversaciones: conversaciones,
         conversacionId: siguiente.id,
@@ -297,6 +303,7 @@ class ChatController extends Notifier<ChatState> {
     _syncPermissions();
     final conversationId = state.conversacionId;
     if (conversationId == null) return;
+    final userId = _currentUserId;
 
     final userMessage = ChatMessage(
       id: _id(),
@@ -305,13 +312,14 @@ class ChatController extends Notifier<ChatState> {
       contenido: contenido,
       creadoEn: DateTime.now(),
     );
-    await LocalDatabase.instance.insertMessage(userMessage);
+    await LocalDatabase.instance.insertMessage(userMessage, userId);
     await LocalDatabase.instance.touchConversation(
+      userId,
       conversationId,
       titulo: _tituloDesde(contenido),
       actualizadaEn: userMessage.creadoEn,
     );
-    final conversaciones = await LocalDatabase.instance.listConversations();
+    final conversaciones = await LocalDatabase.instance.listConversations(userId);
 
     state = state.copyWith(
       mensajes: [...state.mensajes, userMessage],
@@ -440,7 +448,9 @@ class ChatController extends Notifier<ChatState> {
     final chat = await _engine.openChat(systemInstruction: systemPrompt);
 
     // Replay corto del historial persistido para dar contexto al modelo.
+    final userId = _currentUserId;
     final previos = await LocalDatabase.instance.listMessages(
+      userId,
       conversationId,
       limit: 3,
     );
@@ -477,6 +487,7 @@ class ChatController extends Notifier<ChatState> {
     ChatMessageKind tipo = ChatMessageKind.text,
     Map<String, dynamic>? metadata,
   }) async {
+    final userId = _currentUserId;
     final message = ChatMessage(
       id: _id(),
       conversacionId: conversationId,
@@ -486,8 +497,8 @@ class ChatController extends Notifier<ChatState> {
       metadata: metadata,
       creadoEn: DateTime.now(),
     );
-    await LocalDatabase.instance.insertMessage(message);
-    await LocalDatabase.instance.touchConversation(conversationId);
+    await LocalDatabase.instance.insertMessage(message, userId);
+    await LocalDatabase.instance.touchConversation(userId, conversationId);
     if (!ref.mounted) return;
     state = state.copyWith(
       mensajes: [...state.mensajes, message],

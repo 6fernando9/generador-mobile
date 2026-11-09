@@ -113,14 +113,21 @@ class AssistantEngine {
     }
 
     final stat = await file.stat();
-    // Firma sin mtime: solo tamaño + SHA-256 (mtime cambia al acceder al archivo)
-    final signature = '${stat.size}|${AssistantModelManifest.sha256}';
+    // Firma v2: solo tamaño + SHA-256 (sin mtime, que cambia al acceder al archivo)
+    const String signatureVersion = 'v2|';
+    final signature = '$signatureVersion${stat.size}|${AssistantModelManifest.sha256}';
 
     if (!force) {
       final prefs = await SharedPreferences.getInstance();
-      if (prefs.getString(_verifiedKey) == signature) {
+      final cached = prefs.getString(_verifiedKey);
+      // Coincidencia exacta v2 → verificación instantánea
+      if (cached == signature) {
         _verificationChecked = true;
         return;
+      }
+      // Formato antiguo (sin versión, o con mtime) → recalcula SHA una vez y guarda v2
+      if (cached != null && cached.isNotEmpty) {
+        // No hacemos return; caemos a recalcular SHA y guardar formato v2
       }
     }
 
@@ -128,6 +135,8 @@ class AssistantEngine {
     if (digest.toString() != AssistantModelManifest.sha256) {
       await FlutterEdgeAi.uninstallModel(AssistantModelManifest.modelId);
       _verificationChecked = false;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_verifiedKey);
       throw const AssistantModelException(
         'El archivo del modelo está dañado o incompleto. '
         'Vuelve a descargarlo.',

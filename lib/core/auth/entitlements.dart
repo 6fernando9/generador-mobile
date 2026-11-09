@@ -10,13 +10,13 @@ import 'package:mobile/data/models/profile_models.dart';
 class Entitlements {
   const Entitlements._();
 
-  static Future<CachedEntitlement?> cached() =>
-      LocalDatabase.instance.loadEntitlement();
+  static Future<CachedEntitlement?> cached(String userId) =>
+      LocalDatabase.instance.loadEntitlement(userId);
 
   /// Guarda la validación de un perfil obtenido con conexión.
   static Future<CachedEntitlement> saveFromProfile(Perfil perfil) async {
     final entitlement = CachedEntitlement.fromPerfil(perfil);
-    await LocalDatabase.instance.saveEntitlement(entitlement);
+    await LocalDatabase.instance.saveEntitlement(entitlement, perfil.id?.toString() ?? 'unknown');
     return entitlement;
   }
 
@@ -32,7 +32,8 @@ class Entitlements {
       return perfil.puedeReportes;
     }
 
-    final cached = await Entitlements.cached();
+    final userId = perfil?.id?.toString() ?? 'unknown';
+    final cached = await Entitlements.cached(userId);
     if (cached != null && cached.vigente) {
       return cached.puedeReportes;
     }
@@ -42,7 +43,7 @@ class Entitlements {
     return perfil?.puedeReportes ?? false;
   }
 
-  static Future<void> clear() async {
-    await LocalDatabase.instance.clearAll();
+  static Future<void> clear(String userId) async {
+    await LocalDatabase.instance.clearAll(userId);
   }
 }
