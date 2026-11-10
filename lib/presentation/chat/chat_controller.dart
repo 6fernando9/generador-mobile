@@ -105,8 +105,13 @@ class ChatController extends Notifier<ChatState> {
   InferenceChat? _chat;
   CancelToken? _cancelToken;
   bool _initialized = false;
+  String? _sessionUserId;
+  bool _autoDownloadAttempted = false;
 
-  String get _currentUserId => ref.read(authControllerProvider).user?.id?.toString() ?? 'unknown';
+  String get _currentUserId {
+    final user = ref.read(authControllerProvider).user;
+    return user?.id?.toString() ?? user?.username ?? 'unknown';
+  }
 
   @override
   ChatState build() {
@@ -119,8 +124,21 @@ class ChatController extends Notifier<ChatState> {
   }
 
   Future<void> initialize() async {
-    if (_initialized) return;
+    final userId = _currentUserId;
+
+    // Al cambiar de cuenta se descarta todo el estado en memoria. La base ya
+    // filtra por usuario, pero el chat del modelo y los mensajes visibles
+    // también deben quedar limpios.
+    if (_initialized && _sessionUserId == userId) return;
+
+    if (_sessionUserId != null && _sessionUserId != userId) {
+      await _closeChat();
+      _autoDownloadAttempted = false;
+      state = const ChatState();
+    }
+
     _initialized = true;
+    _sessionUserId = userId;
 
     _syncPermissions();
     await _loadConversations();
@@ -182,6 +200,11 @@ class ChatController extends Notifier<ChatState> {
       final installed = await _engine.isInstalled();
       if (!installed) {
         state = state.copyWith(setup: AssistantSetupStatus.noInstalado);
+        // La descarga arranca sola: el usuario no tiene que pulsar nada.
+        if (!_autoDownloadAttempted) {
+          _autoDownloadAttempted = true;
+          unawaited(descargarModelo());
+        }
         return;
       }
       state = state.copyWith(setup: AssistantSetupStatus.verificando);
@@ -195,7 +218,10 @@ class ChatController extends Notifier<ChatState> {
     }
   }
 
-  Future<void> reintentarSetup() => _checkModel();
+  Future<void> reintentarSetup() {
+    _autoDownloadAttempted = false;
+    return _checkModel();
+  }
 
   Future<void> descargarModelo() async {
     if (state.setup == AssistantSetupStatus.descargando) return;
@@ -331,16 +357,21 @@ class ChatController extends Notifier<ChatState> {
 
     final intent = ReportIntentParser.parse(contenido);
     if (intent != null) {
-      await _responderReporte(intent, conversationId);
+      await _responderReporte(intent, conversationId, userId);
       return;
     }
 
-    await _responderConModelo(conversationId);
+    await _responderConModelo(
+      conversationId,
+      contenido,
+      userMessage.id,
+    );
   }
 
   Future<void> _responderReporte(
     ReportIntent intent,
     String conversationId,
+    String userId,
   ) async {
     final auth = ref.read(authControllerProvider);
     final permitido = await Entitlements.puedeReportes(
@@ -364,10 +395,36 @@ class ChatController extends Notifier<ChatState> {
         intent,
         permitido: permitido,
         offline: auth.offline,
+        userId: userId,
       );
+
+      final partes = <String>[result.textoCuerpo];
+      for (final extra in intent.extras) {
+        try {
+          final adicional = await _reports.consultar(
+            ReportIntent(
+              metrica: extra.metrica,
+              categoria: extra.categoria,
+              rango: intent.rango,
+              descripcion: extra.metrica,
+              topN: intent.topN,
+              comparar: intent.comparar,
+            ),
+            permitido: permitido,
+            offline: auth.offline,
+            userId: userId,
+          );
+          partes.add(adicional.textoCuerpo);
+        } catch (_) {
+          partes.add('No pude obtener la parte "${extra.metrica}" del reporte.');
+        }
+      }
+
+      final texto = '${partes.join('\n\n')}\n\n${result.sello}';
+
       await _guardarAsistente(
         conversationId,
-        result.texto,
+        texto,
         tipo: ChatMessageKind.report,
         metadata: {
           'reporte_clave': result.clave,
@@ -377,6 +434,7 @@ class ChatController extends Notifier<ChatState> {
           'generado_en': result.reporte.generadoEn.toIso8601String(),
           'desde_cache': result.desdeCache,
           'rango': result.reporte.rango.toJson(),
+          'texto': texto,
         },
       );
     } on ReportAccessDeniedException {
@@ -400,18 +458,33 @@ class ChatController extends Notifier<ChatState> {
     }
   }
 
-  Future<void> _responderConModelo(String conversationId) async {
+  Future<void> _responderConModelo(
+    String conversationId,
+    String contenido,
+    String userMessageId,
+  ) async {
     if (state.setup != AssistantSetupStatus.listo) {
       await _guardarAsistente(
         conversationId,
-        'El modelo local todavía no está disponible. Descárgalo desde la '
-        'tarjeta de configuración para poder conversar sin conexión.',
+        'El modelo local todavía no está disponible. Se está descargando; '
+        'en cuanto termine podrás conversar sin conexión. También puedes '
+        'pedir un reporte mientras tanto.',
       );
       return;
     }
 
     try {
-      final chat = await _obtenerChat(conversationId);
+      final chat = await _obtenerChat(
+        conversationId,
+        excludeMessageId: userMessageId,
+      );
+
+      // flutter_edge_ai exige preparar el turno del usuario antes de generar.
+      // Sin esta línea el modelo nunca recibe la pregunta actual.
+      await chat.addQueryChunk(
+        Message.text(text: contenido, isUser: true),
+      );
+
       final buffer = StringBuffer();
       final stream = chat.generateChatResponseAsync();
       await for (final response in stream) {
@@ -440,21 +513,26 @@ class ChatController extends Notifier<ChatState> {
     }
   }
 
-  Future<InferenceChat> _obtenerChat(String conversationId) async {
+  Future<InferenceChat> _obtenerChat(
+    String conversationId, {
+    String? excludeMessageId,
+  }) async {
     final existing = _chat;
     if (existing != null) return existing;
 
     final systemPrompt = await AssistantKnowledge.systemPrompt();
     final chat = await _engine.openChat(systemInstruction: systemPrompt);
 
-    // Replay corto del historial persistido para dar contexto al modelo.
+    // Replay corto del historial para dar contexto. Se excluye el mensaje
+    // actual porque se añade justo después como turno del usuario.
     final userId = _currentUserId;
     final previos = await LocalDatabase.instance.listMessages(
       userId,
       conversationId,
-      limit: 3,
+      limit: 9,
     );
-    for (final message in previos.take(previos.length - 1)) {
+    for (final message in previos) {
+      if (message.id == excludeMessageId) continue;
       if (message.contenido.trim().isEmpty) continue;
       await chat.addQueryChunk(
         Message.text(text: message.contenido, isUser: message.esUsuario),
@@ -542,6 +620,7 @@ class ChatController extends Notifier<ChatState> {
       intent: intent,
       reporte: cached.toReporte(),
       desdeCache: metadata['desde_cache'] == true,
+      textoPersonalizado: metadata['texto'] as String?,
     );
 
     try {

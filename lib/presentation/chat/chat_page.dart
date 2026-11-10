@@ -347,7 +347,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                     child: ListView.separated(
                       shrinkWrap: true,
                       itemCount: state.conversaciones.length,
-                      separatorBuilder: (_, __) =>
+                      separatorBuilder: (_, _) =>
                           const Divider(height: 1),
                       itemBuilder: (context, index) {
                         final conversation = state.conversaciones[index];
@@ -475,7 +475,7 @@ class _SetupBanner extends ConsumerWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Modelo local no instalado',
+                    'Preparando el modelo local',
                     style: GoogleFonts.spaceGrotesk(
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
@@ -486,8 +486,9 @@ class _SetupBanner extends ConsumerWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'Descarga una vez ${AssistantModelManifest.sizeLabel} para '
-              'conversar sin conexión. Se recomienda Wi-Fi.',
+              'La descarga de ${AssistantModelManifest.sizeLabel} inicia '
+              'automáticamente. Se recomienda Wi-Fi. Puedes seguir usando el '
+              'dashboard, el historial y los reportes mientras tanto.',
               style: GoogleFonts.inter(
                 fontSize: 12,
                 color: colorScheme.onSurface.withValues(alpha: 0.7),
@@ -495,7 +496,7 @@ class _SetupBanner extends ConsumerWidget {
             ),
             const SizedBox(height: 10),
             NeonButton(
-              label: 'Descargar modelo',
+              label: 'Descargar ahora',
               icon: Icons.cloud_download_rounded,
               style: NeonButtonStyle.primary,
               isFullWidth: true,

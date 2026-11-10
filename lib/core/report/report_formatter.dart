@@ -23,27 +23,71 @@ class ReportFormatter {
   static String _plural(int n, String singular, String plural) =>
       '$n ${n == 1 ? singular : plural}';
 
-  static String build({
-    required ReportIntent intent,
+  static String sello({
     required ReporteConsulta reporte,
     required bool desdeCache,
   }) {
-    final body = switch (intent.metrica) {
-      'resumen' => _resumen(reporte.payload),
-      'tecnologias' => _tecnologias(reporte.payload, intent.categoria),
-      'actividad' => _actividad(reporte.payload),
-      'tendencia' => _tendencia(reporte.payload),
-      'proyectos' => _proyectos(reporte.payload),
-      _ => 'No pude interpretar ese reporte.',
-    };
-
-    final sello = desdeCache
+    return desdeCache
         ? 'Datos al ${_fechaHora.format(reporte.generadoEn)} '
               '(guardados sin conexión).'
         : 'Generado el ${_fechaHora.format(reporte.generadoEn)} '
               'para ${reporte.rango.etiqueta}.';
+  }
 
-    return '$body\n\n$sello';
+  static String build({
+    required ReportIntent intent,
+    required ReporteConsulta reporte,
+    required bool desdeCache,
+    ReporteConsulta? anterior,
+    bool incluirSello = true,
+  }) {
+    var body = switch (intent.metrica) {
+      'resumen' => _resumen(reporte.payload),
+      'tecnologias' => _tecnologias(
+        reporte.payload,
+        intent.categoria,
+        intent.topN ?? 5,
+      ),
+      'actividad' => _actividad(reporte.payload),
+      'tendencia' => _tendencia(reporte.payload),
+      'proyectos' => _proyectos(reporte.payload, intent.topN ?? 5),
+      _ => 'No pude interpretar ese reporte.',
+    };
+
+    if (anterior != null && intent.metrica != 'resumen') {
+      final comparacion = _comparacion(reporte.payload, anterior.payload);
+      if (comparacion != null) {
+        body = '$body\n$comparacion';
+      }
+    }
+
+    if (!incluirSello) return body;
+    return '$body\n\n${sello(reporte: reporte, desdeCache: desdeCache)}';
+  }
+
+  /// Compara el total del período actual con el del período anterior.
+  static String? _comparacion(
+    Map<String, dynamic> actual,
+    Map<String, dynamic> anterior,
+  ) {
+    final totalActual = _total(actual);
+    final totalAnterior = _total(anterior);
+    if (totalActual == null || totalAnterior == null) return null;
+
+    final variacion = totalAnterior == 0
+        ? (totalActual == 0 ? 0.0 : 100.0)
+        : ((totalActual - totalAnterior) / totalAnterior) * 100;
+
+    return 'Comparado con el período anterior: $totalAnterior '
+        '${totalAnterior == 1 ? 'generación' : 'generaciones'} '
+        '(${variacion >= 0 ? '+' : ''}${variacion.toStringAsFixed(1)}%).';
+  }
+
+  static int? _total(Map<String, dynamic> json) {
+    final value = json['total'];
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse('$value');
   }
 
   static String _resumen(Map<String, dynamic> json) {
@@ -87,7 +131,11 @@ class ReportFormatter {
   static String _signed(double value) =>
       '${value >= 0 ? '+' : ''}${value.toStringAsFixed(1)}';
 
-  static String _tecnologias(Map<String, dynamic> json, String? categoria) {
+  static String _tecnologias(
+    Map<String, dynamic> json,
+    String? categoria,
+    int topN,
+  ) {
     final data = DashboardTecnologias.fromJson(json);
     if (data.total == 0) {
       return 'No hay generaciones en el período consultado, así que todavía '
@@ -100,7 +148,7 @@ class ReportFormatter {
         return 'No registraste ${_nombreCategoria(categoria)} en el período '
             'consultado.';
       }
-      final top = items.take(5).toList();
+      final top = items.take(topN).toList();
       final lines = <String>['${_nombreCategoria(categoria)} más usados:'];
       for (var i = 0; i < top.length; i++) {
         lines.add(
@@ -121,7 +169,7 @@ class ReportFormatter {
     ]) {
       final items = data.itemsDe(cat);
       if (items.isEmpty) continue;
-      final top = items.take(3).map((item) {
+      final top = items.take(topN.clamp(1, 10)).map((item) {
         return '${item.nombre} (${item.total})';
       }).join(', ');
       bloques.add('${cat.label}: $top');
@@ -215,14 +263,14 @@ class ReportFormatter {
     return buffer.toString();
   }
 
-  static String _proyectos(Map<String, dynamic> json) {
+  static String _proyectos(Map<String, dynamic> json, int topN) {
     final data = DashboardProyectos.fromJson(json);
     final proyectos = data.proyectos;
     if (proyectos.isEmpty) {
       return 'No hay proyectos con generaciones en el período consultado.';
     }
 
-    final top = proyectos.take(5).toList();
+    final top = proyectos.take(topN.clamp(1, 20)).toList();
     final lines = <String>['Proyectos con más generaciones:'];
     for (var i = 0; i < top.length; i++) {
       final p = top[i];

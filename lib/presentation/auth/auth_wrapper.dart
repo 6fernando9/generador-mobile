@@ -104,7 +104,8 @@ class AuthController extends Notifier<AuthState> {
       );
     } on DioException catch (e) {
       if (e.response?.statusCode == 401) {
-        final currentUserId = state.user?.id?.toString() ?? 'unknown';
+        final currentUserId =
+          state.user?.id?.toString() ?? state.user?.username ?? 'unknown';
         await SecureStorage.clearAuthData();
         await ApiClient.instance.clearCookies();
         await Entitlements.clear(currentUserId);
@@ -245,7 +246,8 @@ class AuthController extends Notifier<AuthState> {
   Future<void> logout() async {
     try {
       await _authService.logout();
-      final currentUserId = state.user?.id?.toString() ?? 'unknown';
+      final currentUserId =
+          state.user?.id?.toString() ?? state.user?.username ?? 'unknown';
       await SecureStorage.clearAuthData();
       await ApiClient.instance.clearCookies();
       await Entitlements.clear(currentUserId);

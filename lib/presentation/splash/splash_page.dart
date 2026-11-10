@@ -1,10 +1,11 @@
 // Splash screen for KrakenDraw mobile app
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/theme/neon_colors.dart';
-import '../../../core/theme/app_theme.dart';
 import '../shared/widgets/neon_background.dart';
 
 /// Splash screen with animated "KrakenDraw" title and neon background
@@ -27,6 +28,8 @@ class _SplashPageState extends State<SplashPage>
   late final Animation<double> _subtitleFade;
 
   static const Duration _splashDuration = Duration(seconds: 3);
+
+  Timer? _navigationTimer;
 
   @override
   void initState() {
@@ -83,7 +86,7 @@ class _SplashPageState extends State<SplashPage>
   }
 
   void _navigateAfterDelay() {
-    Future.delayed(_splashDuration, () {
+    _navigationTimer = Timer(_splashDuration, () {
       if (mounted) {
         context.go('/auth');
       }
@@ -92,6 +95,7 @@ class _SplashPageState extends State<SplashPage>
 
   @override
   void dispose() {
+    _navigationTimer?.cancel();
     _logoController.dispose();
     _textController.dispose();
     _subtitleController.dispose();
@@ -100,9 +104,6 @@ class _SplashPageState extends State<SplashPage>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
       body: NeonBackground(
         showParticles: true,

@@ -16,7 +16,8 @@ class Entitlements {
   /// Guarda la validación de un perfil obtenido con conexión.
   static Future<CachedEntitlement> saveFromProfile(Perfil perfil) async {
     final entitlement = CachedEntitlement.fromPerfil(perfil);
-    await LocalDatabase.instance.saveEntitlement(entitlement, perfil.id?.toString() ?? 'unknown');
+    final userId = perfil.id?.toString() ?? perfil.username;
+    await LocalDatabase.instance.saveEntitlement(entitlement, userId);
     return entitlement;
   }
 
@@ -32,7 +33,8 @@ class Entitlements {
       return perfil.puedeReportes;
     }
 
-    final userId = perfil?.id?.toString() ?? 'unknown';
+    final userId =
+        perfil?.id?.toString() ?? perfil?.username ?? 'unknown';
     final cached = await Entitlements.cached(userId);
     if (cached != null && cached.vigente) {
       return cached.puedeReportes;

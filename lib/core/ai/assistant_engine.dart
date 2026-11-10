@@ -31,6 +31,7 @@ class AssistantEngine {
   static final AssistantEngine instance = AssistantEngine._();
 
   static const String _verifiedKey = 'assistant_model_verified_signature';
+  static const String _readyKey = 'assistant_model_ready_v1';
 
   bool _initialized = false;
   bool _verificationChecked = false;
@@ -46,15 +47,60 @@ class AssistantEngine {
     _initialized = true;
   }
 
+  /// Comprueba la instalación contra el archivo real, no solo contra las
+  /// preferencias del paquete. Así el modelo sobrevive a cierres de sesión y
+  /// reinicios sin volver a pedir la descarga.
   Future<bool> isInstalled() async {
-    if (!_initialized) return false;
-    try {
-      return await FlutterEdgeAi.isModelInstalled(
-        AssistantModelManifest.modelId,
-      );
-    } catch (_) {
-      return false;
+    await initialize();
+
+    final path = await _validModelPath();
+    if (path != null) {
+      await _setReady(true);
+      return true;
     }
+
+    // Respaldo: el registro del paquete puede tardar en restaurarse al
+    // inicializar, o haber perdido la identidad del modelo activo.
+    try {
+      final instalados = await FlutterEdgeAi.listInstalledModels();
+      if (instalados.contains(AssistantModelManifest.modelId)) {
+        final candidate = await FlutterEdgeAi.getModelPath(
+          AssistantModelManifest.fileName,
+        );
+        if (await File(candidate).exists()) {
+          await _setReady(true);
+          return true;
+        }
+      }
+    } catch (_) {
+      // Sin registro utilizable: se considera no instalado.
+    }
+
+    await _setReady(false);
+    return false;
+  }
+
+  /// Ruta del `.task` solo si existe y tiene el tamaño esperado.
+  Future<String?> _validModelPath() async {
+    try {
+      final path = await FlutterEdgeAi.getModelPath(
+        AssistantModelManifest.fileName,
+      );
+      final file = File(path);
+      if (!await file.exists()) return null;
+      final length = await file.length();
+      if (length != AssistantModelManifest.sizeBytes) return null;
+      return path;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _setReady(bool value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_readyKey, value);
+    } catch (_) {}
   }
 
   /// Instala el modelo si hace falta y verifica su SHA-256.
@@ -82,6 +128,7 @@ class AssistantEngine {
 
     debugPrint('Modelo instalado: ${installation.modelId}');
     await _verifyChecksum(force: true);
+    await _setReady(true);
     onProgress(100);
   }
 
@@ -137,6 +184,7 @@ class AssistantEngine {
       _verificationChecked = false;
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_verifiedKey);
+      await _setReady(false);
       throw const AssistantModelException(
         'El archivo del modelo está dañado o incompleto. '
         'Vuelve a descargarlo.',
@@ -145,6 +193,7 @@ class AssistantEngine {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_verifiedKey, signature);
+    await prefs.setBool(_readyKey, true);
     _verificationChecked = true;
   }
 
@@ -168,9 +217,11 @@ class AssistantEngine {
     return model.openChat(
       systemInstruction: systemInstruction,
       maxOutputTokens: AssistantModelManifest.maxOutputTokens,
-      temperature: 0.35,
-      topK: 20,
-      topP: 0.9,
+      // Un poco más de temperatura para que la charla no se sienta rígida,
+      // sin perder precisión en datos y términos.
+      temperature: 0.6,
+      topK: 40,
+      topP: 0.95,
       randomSeed: DateTime.now().millisecondsSinceEpoch & 0x7fffffff,
     );
   }
@@ -195,6 +246,7 @@ class AssistantEngine {
     } catch (_) {}
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_verifiedKey);
+    await prefs.remove(_readyKey);
     _verificationChecked = false;
   }
 }

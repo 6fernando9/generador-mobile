@@ -13,7 +13,7 @@ class LocalDatabase {
   static final LocalDatabase instance = LocalDatabase._();
 
   static const String _dbName = 'kraken_draw_local.db';
-  static const int _version = 2;
+  static const int _version = 3;
 
   Database? _db;
 
@@ -82,8 +82,7 @@ class LocalDatabase {
 
     await db.execute('''
       CREATE TABLE derechos (
-        id INTEGER PRIMARY KEY CHECK (id = 1),
-        user_id TEXT NOT NULL,
+        user_id TEXT PRIMARY KEY,
         es_admin INTEGER NOT NULL,
         puede_reportes INTEGER NOT NULL,
         plan_code TEXT,
@@ -95,19 +94,90 @@ class LocalDatabase {
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-      // Añadir user_id a conversaciones
-      await db.execute('ALTER TABLE conversaciones ADD COLUMN user_id TEXT NOT NULL DEFAULT ''unknown''');
-      // Añadir user_id a mensajes
-      await db.execute('ALTER TABLE mensajes ADD COLUMN user_id TEXT NOT NULL DEFAULT ''unknown''');
-      // Recrear índice con user_id
+      // La versión 1 compartía las conversaciones entre cuentas. Se añade el
+      // propietario con un valor por defecto válido (las comillas simples
+      // importan: `DEFAULT 'unknown'`, no `DEFAULT unknown`).
+      await _addColumnIfMissing(
+        db,
+        'conversaciones',
+        'user_id',
+        "TEXT NOT NULL DEFAULT 'unknown'",
+      );
+      await _addColumnIfMissing(
+        db,
+        'mensajes',
+        'user_id',
+        "TEXT NOT NULL DEFAULT 'unknown'",
+      );
       await db.execute('DROP INDEX IF EXISTS idx_mensajes_conversacion');
       await db.execute(
-        'CREATE INDEX idx_mensajes_conversacion '
+        'CREATE INDEX IF NOT EXISTS idx_mensajes_conversacion '
         'ON mensajes(user_id, conversacion_id, creado_en)',
       );
-      // Añadir user_id a derechos
-      await db.execute('ALTER TABLE derechos ADD COLUMN user_id TEXT NOT NULL DEFAULT ''unknown''');
+      await _addColumnIfMissing(
+        db,
+        'derechos',
+        'user_id',
+        "TEXT NOT NULL DEFAULT 'unknown'",
+      );
     }
+
+    if (oldVersion < 3) {
+      // La tabla antigua solo admitía una fila (`id = 1`). Se reconstruye con
+      // el usuario como clave para no pisar los derechos al cambiar de cuenta.
+      await _rebuildDerechos(db);
+    }
+  }
+
+  Future<bool> _hasColumn(
+    Database db,
+    String table,
+    String column,
+  ) async {
+    final rows = await db.rawQuery('PRAGMA table_info($table)');
+    return rows.any((row) => row['name'] == column);
+  }
+
+  Future<void> _addColumnIfMissing(
+    Database db,
+    String table,
+    String column,
+    String definition,
+  ) async {
+    if (await _hasColumn(db, table, column)) return;
+    await db.execute('ALTER TABLE $table ADD COLUMN $column $definition');
+  }
+
+  Future<void> _rebuildDerechos(Database db) async {
+    final columns = await db.rawQuery('PRAGMA table_info(derechos)');
+    if (columns.isEmpty) return;
+    final names = columns.map((row) => row['name']).toSet();
+    if (!names.contains('user_id')) return;
+
+    const temp = 'derechos_v3';
+    await db.execute('DROP TABLE IF EXISTS $temp');
+    await db.execute('''
+      CREATE TABLE $temp (
+        user_id TEXT PRIMARY KEY,
+        es_admin INTEGER NOT NULL,
+        puede_reportes INTEGER NOT NULL,
+        plan_code TEXT,
+        username TEXT,
+        validado_en INTEGER NOT NULL
+      )
+    ''');
+
+    await db.execute('''
+      INSERT OR REPLACE INTO $temp
+        (user_id, es_admin, puede_reportes, plan_code, username, validado_en)
+      SELECT
+        COALESCE(NULLIF(user_id, ''), 'unknown'),
+        es_admin, puede_reportes, plan_code, username, validado_en
+      FROM derechos
+    ''');
+
+    await db.execute('DROP TABLE derechos');
+    await db.execute('ALTER TABLE $temp RENAME TO derechos');
   }
 
   // ---------------------------------------------------------------------------
@@ -157,7 +227,7 @@ class LocalDatabase {
     await db.update(
       'conversaciones',
       {
-        if (titulo != null) 'titulo': titulo,
+        'titulo': ?titulo,
         'actualizada_en':
             (actualizadaEn ?? DateTime.now()).millisecondsSinceEpoch,
       },
@@ -293,7 +363,12 @@ class LocalDatabase {
 
   Future<CachedEntitlement?> loadEntitlement(String userId) async {
     final db = await database;
-    final rows = await db.query('derechos', where: 'id = 1 AND user_id = ?', whereArgs: [userId], limit: 1);
+    final rows = await db.query(
+      'derechos',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+      limit: 1,
+    );
     if (rows.isEmpty) return null;
     return CachedEntitlement.fromMap(rows.first);
   }
@@ -302,7 +377,13 @@ class LocalDatabase {
     final db = await database;
     await db.delete('mensajes', where: 'user_id = ?', whereArgs: [userId]);
     await db.delete('conversaciones', where: 'user_id = ?', whereArgs: [userId]);
-    await db.delete('cache_reportes');
+    // La caché usa claves con prefijo de usuario; borrar solo la propia evita
+    // dejar sin reportes offline a otras cuentas del mismo dispositivo.
+    await db.delete(
+      'cache_reportes',
+      where: "clave LIKE ? ESCAPE '\\'",
+      whereArgs: ['${userId.replaceAll('%', '\\%').replaceAll('_', '\\_')}|%'],
+    );
     await db.delete('derechos', where: 'user_id = ?', whereArgs: [userId]);
   }
 }

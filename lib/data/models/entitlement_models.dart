@@ -33,7 +33,6 @@ class CachedEntitlement {
   }
 
   Map<String, Object?> toMap() => {
-    'id': 1,
     'es_admin': esAdmin ? 1 : 0,
     'puede_reportes': puedeReportes ? 1 : 0,
     'plan_code': planCode,

@@ -21,6 +21,18 @@ class ReportRange {
   String cacheKey(String metrica, String? categoria) =>
       '$metrica|${categoria ?? ''}|$desdeIso|$hastaIso|$tz';
 
+  /// Rango inmediatamente anterior de la misma duración (para comparativas).
+  ReportRange anterior() {
+    final duracion = hasta.difference(desde);
+    final hastaAnterior = desde.subtract(const Duration(milliseconds: 1));
+    final desdeAnterior = hastaAnterior.subtract(duracion);
+    return ReportRange(
+      desde: desdeAnterior,
+      hasta: hastaAnterior,
+      tz: tz,
+    );
+  }
+
   String get etiqueta {
     final fmt = DateFormat('dd/MM/yyyy HH:mm');
     return '${fmt.format(desde)} – ${fmt.format(hasta)}';
@@ -91,9 +103,12 @@ class CachedReport {
     required this.payload,
   });
 
-  factory CachedReport.fromReporte(ReporteConsulta reporte) {
+  factory CachedReport.fromReporte(
+    ReporteConsulta reporte, {
+    String? clave,
+  }) {
     return CachedReport(
-      clave: reporte.cacheKey,
+      clave: clave ?? reporte.cacheKey,
       metrica: reporte.metrica,
       categoria: reporte.categoria,
       rango: reporte.rango,
