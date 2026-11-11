@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
 import 'package:mobile/data/models/chat_models.dart';
 import 'package:mobile/data/models/entitlement_models.dart';
 import 'package:mobile/data/models/report_models.dart';
+import 'package:mobile/data/models/saved_download.dart';
 
 /// Base SQLite local del asistente: conversaciones, mensajes, caché de
 /// reportes y derechos cacheados. No reemplaza a PostgreSQL.
@@ -13,7 +16,7 @@ class LocalDatabase {
   static final LocalDatabase instance = LocalDatabase._();
 
   static const String _dbName = 'kraken_draw_local.db';
-  static const int _version = 3;
+  static const int _version = 4;
 
   Database? _db;
 
@@ -90,6 +93,8 @@ class LocalDatabase {
         validado_en INTEGER NOT NULL
       )
     ''');
+
+    await _crearTablaRegeneraciones(db);
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -127,13 +132,31 @@ class LocalDatabase {
       // el usuario como clave para no pisar los derechos al cambiar de cuenta.
       await _rebuildDerechos(db);
     }
+
+    if (oldVersion < 4) await _crearTablaRegeneraciones(db);
   }
 
-  Future<bool> _hasColumn(
-    Database db,
-    String table,
-    String column,
-  ) async {
+  Future<void> _crearTablaRegeneraciones(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS regeneraciones (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        nombre TEXT NOT NULL,
+        extension TEXT NOT NULL,
+        ubicacion TEXT NOT NULL,
+        ruta_local TEXT NOT NULL,
+        creado_en INTEGER NOT NULL,
+        predeterminado INTEGER NOT NULL DEFAULT 0,
+        copia_interna INTEGER NOT NULL DEFAULT 0
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_regeneraciones_usuario_fecha '
+      'ON regeneraciones(user_id, creado_en DESC)',
+    );
+  }
+
+  Future<bool> _hasColumn(Database db, String table, String column) async {
     final rows = await db.rawQuery('PRAGMA table_info($table)');
     return rows.any((row) => row['name'] == column);
   }
@@ -184,7 +207,10 @@ class LocalDatabase {
   // Conversaciones
   // ---------------------------------------------------------------------------
 
-  Future<void> insertConversation(ChatConversation conversation, String userId) async {
+  Future<void> insertConversation(
+    ChatConversation conversation,
+    String userId,
+  ) async {
     final db = await database;
     await db.insert('conversaciones', {
       'id': conversation.id,
@@ -347,10 +373,81 @@ class LocalDatabase {
   }
 
   // ---------------------------------------------------------------------------
+  // Historial local de regeneraciones
+  // ---------------------------------------------------------------------------
+
+  /// Registra una descarga y conserva solo las 20 más recientes por cuenta.
+  /// Devuelve rutas de copias privadas antiguas que ya se pueden borrar.
+  Future<List<String>> recordSavedDownload(
+    SavedDownload download,
+    String userId,
+  ) async {
+    final db = await database;
+    await db.insert(
+      'regeneraciones',
+      download.toMap(userId),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    final rows = await db.query(
+      'regeneraciones',
+      columns: ['id', 'ruta_local', 'copia_interna'],
+      where: 'user_id = ?',
+      whereArgs: [userId],
+      orderBy: 'creado_en DESC',
+    );
+    if (rows.length <= 20) return const [];
+
+    final antiguas = rows.skip(20).toList();
+    final batch = db.batch();
+    for (final row in antiguas) {
+      batch.delete(
+        'regeneraciones',
+        where: 'id = ? AND user_id = ?',
+        whereArgs: [row['id'], userId],
+      );
+    }
+    await batch.commit(noResult: true);
+
+    return [
+      for (final row in antiguas)
+        if (row['copia_interna'] == 1) row['ruta_local'] as String,
+    ];
+  }
+
+  Future<List<SavedDownload>> listSavedDownloads(
+    String userId, {
+    int limit = 20,
+  }) async {
+    final db = await database;
+    final rows = await db.query(
+      'regeneraciones',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+      orderBy: 'creado_en DESC',
+      limit: limit,
+    );
+    return rows.map(SavedDownload.fromMap).toList();
+  }
+
+  Future<SavedDownload?> getSavedDownload(String userId, String id) async {
+    final db = await database;
+    final rows = await db.query(
+      'regeneraciones',
+      where: 'user_id = ? AND id = ?',
+      whereArgs: [userId, id],
+      limit: 1,
+    );
+    return rows.isEmpty ? null : SavedDownload.fromMap(rows.first);
+  }
+
+  // ---------------------------------------------------------------------------
   // Derechos (entitlements)
   // ---------------------------------------------------------------------------
 
-  Future<void> saveEntitlement(CachedEntitlement entitlement, String userId) async {
+  Future<void> saveEntitlement(
+    CachedEntitlement entitlement,
+    String userId,
+  ) async {
     final db = await database;
     final map = entitlement.toMap();
     map['user_id'] = userId;
@@ -375,8 +472,22 @@ class LocalDatabase {
 
   Future<void> clearAll(String userId) async {
     final db = await database;
+    final copias = await db.query(
+      'regeneraciones',
+      columns: ['ruta_local'],
+      where: 'user_id = ? AND copia_interna = 1',
+      whereArgs: [userId],
+    );
+    for (final copia in copias) {
+      final archivo = File(copia['ruta_local'] as String);
+      if (await archivo.exists()) await archivo.delete();
+    }
     await db.delete('mensajes', where: 'user_id = ?', whereArgs: [userId]);
-    await db.delete('conversaciones', where: 'user_id = ?', whereArgs: [userId]);
+    await db.delete(
+      'conversaciones',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+    );
     // La caché usa claves con prefijo de usuario; borrar solo la propia evita
     // dejar sin reportes offline a otras cuentas del mismo dispositivo.
     await db.delete(
@@ -385,5 +496,10 @@ class LocalDatabase {
       whereArgs: ['${userId.replaceAll('%', '\\%').replaceAll('_', '\\_')}|%'],
     );
     await db.delete('derechos', where: 'user_id = ?', whereArgs: [userId]);
+    await db.delete(
+      'regeneraciones',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+    );
   }
 }

@@ -1,9 +1,8 @@
 // Modal "Descargar": elige entre regenerar el proyecto o una exportación.
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/data/models/log_models.dart';
+import 'package:mobile/data/models/saved_download.dart';
 import 'package:mobile/presentation/dashboard/history/download/download_widgets.dart';
 import 'package:mobile/presentation/dashboard/history/download/regenerar_proyecto_sheet.dart';
 import 'package:mobile/presentation/dashboard/history/download/regenerar_reporte_sheet.dart';
@@ -15,7 +14,7 @@ class LogDownloadSheet {
   const LogDownloadSheet._();
 
   /// Devuelve el archivo guardado, o null si el usuario canceló.
-  static Future<File?> mostrar(
+  static Future<SavedDownload?> mostrar(
     BuildContext context, {
     required LogDetalle detalle,
   }) async {

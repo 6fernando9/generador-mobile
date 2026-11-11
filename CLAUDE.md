@@ -14,6 +14,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Skeleton Loaders**: Comprehensive shimmer-based loading states for all async screens
 - **Dark/Light Mode**: Full Material 3 theming with neon aesthetic adapting to both themes
 - **Service Layer**: Clean separation with AuthService, UsuarioService, DashboardService, PagosService, LogsService
+- **AI Reports**: Chat queries personal metrics and exports scoped PDF/XLSX reports with KrakenDraw branding
+- **Regeneration Downloads**: Native destination selection for ZIP/SQL with per-account local history and assistant open actions
 
 ---
 
@@ -99,12 +101,20 @@ lib/
 │   │       ├── pagos_service.dart     # mi-suscripcion, historial, checkout
 │   │       ├── logs_service.dart      # historial, detalle público, regenerar
 │   │       ├── generacion_service.dart# catálogos de generación
-│   │       └── exportacion_service.dart # catálogos de exportación SQL/XML
+│   │       ├── exportacion_service.dart # catálogos de exportación SQL/XML
+│   │       └── reportes_service.dart  # GET /reportes/consultar
 │   ├── config/
 │   │   └── app_config.dart            # WEB_BASE_URL + URL del visor
 │   ├── files/
-│   │   └── download_saver.dart        # guardar/abrir archivos descargados
+│   │   └── download_saver.dart        # elegir destino, guardar y abrir regeneraciones
+│   ├── report/
+│   │   ├── report_intent_parser.dart  # detecta métricas, categorías múltiples y Top N
+│   │   ├── report_coordinator.dart    # consulta, caché y composición de reportes
+│   │   └── report_formatter.dart      # respuesta textual limitada a lo solicitado
+│   ├── export/
+│   │   └── report_exporter.dart       # PDF y XLSX desde los datos del reporte
 │   ├── storage/
+│   │   ├── local_database.dart        # conversaciones, caché y últimas 20 regeneraciones por cuenta
 │   │   └── secure_storage.dart        # flutter_secure_storage wrapper
 │   ├── theme/
 │   │   ├── app_theme.dart             # Material 3 ThemeData (light/dark)
@@ -221,6 +231,28 @@ protegidos con el Dio de la app (que sí lleva la cookie).
 | GET | `/proyectos-usuarios` | Top projects & users |
 | GET | `/contactos` | Contact metrics |
 
+### Personal Reports (`/api/reportes/`) - Auth required
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/consultar` | Consulta métricas personales para el chat y las exportaciones |
+
+`/reportes/consultar` accepts the requested metric and date range. For
+`metrica=tecnologias`, `categoria` can contain one or more comma-separated
+categories (for example `lenguajes,frameworks`). The mobile parser detects
+the categories explicitly mentioned by the user; the response, chat text,
+PDF, and XLSX must include only those categories. When multiple categories
+are requested, include each requested category. `top_n` limits ranked results
+and must be preserved when exporting a report from a chat message.
+
+The report endpoint may use dashboard data internally, but it filters its
+response to the requested categories. Keep `/api/dashboard/tecnologias` and
+other dashboard behavior unchanged: dashboard responses continue to provide
+their complete data for dashboard screens.
+
+PDF exports include tables/charts for report data and KrakenDraw branding.
+XLSX exports include a summary and only relevant data sheets. Both formats
+must use the same scoped report data as the chat response.
+
 ### Payments Endpoints (`/api/pagos/`) - Auth required
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -311,6 +343,14 @@ cuerpo para mostrar el mensaje.
 | `lib/main.dart` | App entry, routing, theme, providers |
 | `lib/core/network/api_client.dart` | Dio + CookieJar + interceptors |
 | `lib/core/network/services/*.dart` | Servicios de API; cada uno declara su clase privada `_Endpoints` |
+| `lib/core/files/download_saver.dart` | Selección del destino, guardado, historial local y apertura de ZIP/SQL |
+| `lib/core/storage/local_database.dart` | SQLite local del asistente y últimas 20 regeneraciones por cuenta |
+| `lib/data/models/saved_download.dart` | Metadatos locales de una regeneración guardada |
+| `lib/core/network/services/reportes_service.dart` | Cliente de `/api/reportes/consultar` |
+| `lib/core/report/report_intent_parser.dart` | Detección local de intención, métricas y categorías solicitadas |
+| `lib/core/report/report_coordinator.dart` | Consulta/caché de reportes y composición de consultas |
+| `lib/core/report/report_formatter.dart` | Presentación de métricas solicitadas en el chat |
+| `lib/core/export/report_exporter.dart` | Exportación de reportes a PDF y XLSX |
 | `lib/core/theme/app_theme.dart` | Light/dark Material 3 themes |
 | `lib/core/theme/neon_colors.dart` | Neon color palette |
 | `lib/core/storage/secure_storage.dart` | Secure user data/theme storage (el JWT solo vive en la cookie) |

@@ -1,15 +1,15 @@
 // Modal de regeneración de exportación (SQL por ahora) desde un log.
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/files/download_saver.dart';
 import 'package:mobile/data/models/exportacion_models.dart';
 import 'package:mobile/data/models/log_models.dart';
+import 'package:mobile/data/models/saved_download.dart';
 import 'package:mobile/presentation/dashboard/history/download/download_providers.dart';
 import 'package:mobile/presentation/dashboard/history/download/download_widgets.dart';
 import 'package:mobile/presentation/dashboard/history/logs_providers.dart';
+import 'package:mobile/presentation/auth/auth_wrapper.dart';
 import 'package:mobile/presentation/shared/widgets/neon_button.dart';
 
 /// Regenera la exportación SQL/XML del diagrama guardado.
@@ -19,11 +19,11 @@ class RegenerarReporteSheet extends ConsumerStatefulWidget {
   final LogDetalle detalle;
 
   /// Abre el modal y devuelve el archivo guardado, o null si se canceló.
-  static Future<File?> mostrar(
+  static Future<SavedDownload?> mostrar(
     BuildContext context, {
     required LogDetalle detalle,
   }) {
-    return showModalBottomSheet<File>(
+    return showModalBottomSheet<SavedDownload>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -52,9 +52,7 @@ class _RegenerarReporteSheetState extends ConsumerState<RegenerarReporteSheet> {
   @override
   void initState() {
     super.initState();
-    _nombreBd = TextEditingController(
-      text: widget.detalle.log.proyectoNombre,
-    );
+    _nombreBd = TextEditingController(text: widget.detalle.log.proyectoNombre);
     _cargarOpciones();
   }
 
@@ -65,8 +63,7 @@ class _RegenerarReporteSheetState extends ConsumerState<RegenerarReporteSheet> {
   }
 
   /// Por ahora solo se ofrecen reportes SQL.
-  bool _esSql(TipoReporteOpcion tipo) =>
-      tipo.nombreCode.toLowerCase() == 'sql';
+  bool _esSql(TipoReporteOpcion tipo) => tipo.nombreCode.toLowerCase() == 'sql';
 
   Future<void> _cargarOpciones() async {
     setState(() {
@@ -142,9 +139,7 @@ class _RegenerarReporteSheetState extends ConsumerState<RegenerarReporteSheet> {
       return;
     }
     if (_baseDatosDestinoId == null) {
-      setState(
-        () => _errorGeneracion = 'Selecciona una base de datos destino',
-      );
+      setState(() => _errorGeneracion = 'Selecciona una base de datos destino');
       return;
     }
 
@@ -174,6 +169,7 @@ class _RegenerarReporteSheetState extends ConsumerState<RegenerarReporteSheet> {
       final guardado = await DownloadSaver.guardar(
         bytes: archivo.bytes,
         nombreArchivo: nombre,
+        userId: _userId,
       );
 
       if (!mounted) return;
@@ -185,6 +181,11 @@ class _RegenerarReporteSheetState extends ConsumerState<RegenerarReporteSheet> {
         _errorGeneracion = mensajeDeError(e);
       });
     }
+  }
+
+  String get _userId {
+    final user = ref.read(authControllerProvider).user;
+    return user?.id?.toString() ?? user?.username ?? 'unknown';
   }
 
   @override
@@ -243,9 +244,7 @@ class _RegenerarReporteSheetState extends ConsumerState<RegenerarReporteSheet> {
             label: 'Tipo de reporte',
             icono: Icons.description_outlined,
             valor: tipo.id,
-            items: [
-              for (final t in tipos) (id: t.id, nombre: t.nombre),
-            ],
+            items: [for (final t in tipos) (id: t.id, nombre: t.nombre)],
             onChanged: (value) => setState(() {
               _tipoReporteId = value;
               final elegido = _tipoReporte;
@@ -260,8 +259,7 @@ class _RegenerarReporteSheetState extends ConsumerState<RegenerarReporteSheet> {
             icono: Icons.dns_outlined,
             valor: _baseDatosDestinoId,
             items: [
-              for (final hija in tipo.hijas)
-                (id: hija.id, nombre: hija.nombre),
+              for (final hija in tipo.hijas) (id: hija.id, nombre: hija.nombre),
             ],
             onChanged: (value) => setState(() => _baseDatosDestinoId = value),
           ),
@@ -282,7 +280,8 @@ class _RegenerarReporteSheetState extends ConsumerState<RegenerarReporteSheet> {
             'El archivo se genera desde el diagrama guardado de esta generación.',
             style: GoogleFonts.inter(
               fontSize: 11,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              color: Theme.of(context).colorScheme.onSurface
+                  .withValues(alpha: 0.6),
             ),
           ),
           if (_errorGeneracion != null) ...[

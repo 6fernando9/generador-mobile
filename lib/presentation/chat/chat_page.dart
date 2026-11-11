@@ -167,6 +167,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                               onExport: (formato) => ref
                                   .read(chatControllerProvider.notifier)
                                   .exportarReporte(message, formato),
+                              onOpenDownload: (id) => ref
+                                  .read(chatControllerProvider.notifier)
+                                  .abrirRegeneracion(id),
                             );
                           }
                           return _DraftBubble(
@@ -614,6 +617,7 @@ class _Welcome extends StatelessWidget {
 
     final sugerencias = <String>[
       '¿Cómo genero un proyecto desde Kraken Draw?',
+      '¿Dónde quedó mi última regeneración?',
       '¿Qué datos personales guarda Kraken Draw?',
       '¿Dónde configuro usuarios y permisos?',
       if (state.puedeReportes) 'Lenguajes más usados este mes',
@@ -714,11 +718,13 @@ class _MessageBubble extends StatelessWidget {
     required this.message,
     required this.hora,
     required this.onExport,
+    required this.onOpenDownload,
   });
 
   final ChatMessage message;
   final String hora;
   final void Function(String formato) onExport;
+  final void Function(String id) onOpenDownload;
 
   @override
   Widget build(BuildContext context) {
@@ -810,6 +816,21 @@ class _MessageBubble extends StatelessWidget {
                   label: Text('Excel', style: GoogleFonts.inter(fontSize: 12)),
                 ),
               ],
+            ),
+          ],
+          if (message.metadata?['regeneracion_id'] case final String id) ...[
+            const SizedBox(height: 8),
+            const Divider(height: 1),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => onOpenDownload(id),
+                icon: const Icon(Icons.open_in_new_rounded, size: 17),
+                label: Text(
+                  'Abrir archivo',
+                  style: GoogleFonts.inter(fontSize: 12),
+                ),
+              ),
             ),
           ],
         ],

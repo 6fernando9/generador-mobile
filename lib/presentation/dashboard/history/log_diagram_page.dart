@@ -8,9 +8,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:mobile/core/config/app_config.dart';
 import 'package:mobile/core/files/download_saver.dart';
 import 'package:mobile/data/models/log_models.dart';
+import 'package:mobile/data/models/saved_download.dart';
 import 'package:mobile/presentation/dashboard/history/download/log_download_sheet.dart';
 import 'package:mobile/presentation/dashboard/history/logs_providers.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -98,10 +100,7 @@ class _LogDiagramPageState extends ConsumerState<LogDiagramPage> {
 
     setState(() => _descargando = true);
     try {
-      final archivo = await LogDownloadSheet.mostrar(
-        context,
-        detalle: detalle,
-      );
+      final archivo = await LogDownloadSheet.mostrar(context, detalle: detalle);
       if (!mounted || archivo == null) return;
       _mostrarDescarga(archivo);
     } finally {
@@ -119,16 +118,24 @@ class _LogDiagramPageState extends ConsumerState<LogDiagramPage> {
     }
   }
 
-  void _mostrarDescarga(File archivo) {
+  void _mostrarDescarga(SavedDownload archivo) {
     final messenger = ScaffoldMessenger.of(context);
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(
       SnackBar(
-        content: Text('Archivo guardado: ${archivo.path}'),
+        content: Text(
+          archivo.usoUbicacionPredeterminada
+              ? 'Guardado por defecto en ${archivo.ubicacion}/${archivo.nombre}'
+              : 'Guardado en ${archivo.ubicacion}/${archivo.nombre}',
+        ),
         duration: const Duration(seconds: 6),
         action: SnackBarAction(
           label: 'Abrir',
-          onPressed: () => DownloadSaver.abrir(archivo),
+          onPressed: () async {
+            final result = await DownloadSaver.abrir(archivo);
+            if (!mounted || result.type == ResultType.done) return;
+            messenger.showSnackBar(SnackBar(content: Text(result.message)));
+          },
         ),
       ),
     );

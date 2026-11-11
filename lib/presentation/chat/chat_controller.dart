@@ -8,11 +8,14 @@ import 'package:mobile/core/ai/assistant_engine.dart';
 import 'package:mobile/core/ai/assistant_knowledge.dart';
 import 'package:mobile/core/auth/entitlements.dart';
 import 'package:mobile/core/export/report_exporter.dart';
+import 'package:mobile/core/files/download_saver.dart';
 import 'package:mobile/core/report/report_coordinator.dart';
 import 'package:mobile/core/report/report_intent_parser.dart';
 import 'package:mobile/core/storage/local_database.dart';
 import 'package:mobile/data/models/chat_models.dart';
 import 'package:mobile/data/models/report_models.dart';
+import 'package:mobile/data/models/saved_download.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:mobile/presentation/auth/auth_wrapper.dart';
 
 enum AssistantSetupStatus {
@@ -371,12 +374,192 @@ class ChatController extends Notifier<ChatState> {
     );
 
     final intent = ReportIntentParser.parse(contenido);
+    if (await _responderConsultaRegeneraciones(
+      contenido,
+      conversationId,
+      userId,
+    )) {
+      return;
+    }
     if (intent != null) {
       await _responderReporte(intent, conversationId, userId);
       return;
     }
 
     await _responderConModelo(conversationId, contenido, userMessage.id);
+  }
+
+  Future<bool> _responderConsultaRegeneraciones(
+    String contenido,
+    String conversationId,
+    String userId,
+  ) async {
+    final consulta = _normalizarConsulta(contenido);
+    final mencionaArchivo = RegExp(r'\b(archivo|zip|sql|proyecto|regener)\w*\b')
+        .hasMatch(consulta);
+    final preguntaUbicacion = RegExp(r'\b(donde|ubicacion|ruta)\w*\b')
+        .hasMatch(consulta);
+    final preguntaGuardado = RegExp(r'\b(guard|descarg)\w*\b')
+        .hasMatch(consulta);
+    final preguntaAbrir = RegExp(r'\b(abr|encuentr|buscar|busco)\w*\b')
+        .hasMatch(consulta);
+    if (!((preguntaUbicacion && (mencionaArchivo || preguntaGuardado)) ||
+        (preguntaAbrir && mencionaArchivo))) {
+      return false;
+    }
+
+    final historial = await LocalDatabase.instance.listSavedDownloads(userId);
+    if (historial.isEmpty) {
+      await _guardarAsistente(
+        conversationId,
+        'Todavía no hay regeneraciones guardadas en este dispositivo. '
+        'Al regenerar un proyecto ZIP o un SQL puedes elegir dónde guardarlo; '
+        'si cierras el selector, KrakenDraw lo guarda en su carpeta '
+        'predeterminada.',
+      );
+      return true;
+    }
+
+    final sql = RegExp(r'\b(sql|script|base de datos)\b').hasMatch(consulta);
+    final zip = RegExp(r'\b(zip|proyecto|backend|frontend|mobile)\b')
+        .hasMatch(consulta);
+    var opciones = historial;
+    if (sql) {
+      opciones = historial.where((item) => item.extension == 'sql').toList();
+    } else if (zip) {
+      opciones = historial.where((item) => item.extension == 'zip').toList();
+    }
+
+    final archivo =
+        _buscarRegeneracion(opciones, consulta) ??
+        (opciones.isEmpty ? null : opciones.first);
+    if (archivo == null) {
+      final solicitado = sql ? 'SQL' : 'ZIP';
+      await _guardarAsistente(
+        conversationId,
+        'No encuentro regeneraciones $solicitado recientes en este dispositivo. '
+        'El historial local conserva las últimas 20 descargas de esta cuenta.',
+      );
+      return true;
+    }
+
+    final texto =
+        'Encontré ${archivo.nombre} (${archivo.tipo}). '
+        'Se guardó en ${archivo.ubicacion}/${archivo.nombre}. '
+        'Puedes abrirlo desde aquí o desde esa ubicación en este dispositivo.';
+    await _guardarAsistente(
+      conversationId,
+      texto,
+      metadata: {'regeneracion_id': archivo.id},
+    );
+    return true;
+  }
+
+  SavedDownload? _buscarRegeneracion(
+    List<SavedDownload> opciones,
+    String consulta,
+  ) {
+    if (opciones.isEmpty) return null;
+    for (final archivo in opciones) {
+      final base = archivo.nombre.toLowerCase().replaceAll(
+        RegExp(r'\.(zip|sql)$'),
+        '',
+      );
+      if (base.isNotEmpty && consulta.contains(_normalizarConsulta(base))) {
+        return archivo;
+      }
+    }
+
+    const ignoradas = {
+      'donde',
+      'esta',
+      'quedo',
+      'guarde',
+      'guardado',
+      'descargue',
+      'archivo',
+      'proyecto',
+      'ultimo',
+      'ultima',
+      'abrir',
+      'encuentro',
+      'busco',
+      'por',
+      'favor',
+      'el',
+      'la',
+      'los',
+      'las',
+      'un',
+      'una',
+      'de',
+      'del',
+      'mi',
+      'mis',
+      'sql',
+      'zip',
+      'regeneracion',
+      'regeneraciones',
+      'descarga',
+    };
+    final palabras = consulta
+        .split(RegExp(r'[^a-z0-9]+'))
+        .where((palabra) => palabra.length >= 4 && !ignoradas.contains(palabra))
+        .toList();
+    SavedDownload? mejor;
+    var puntajeMejor = 0;
+    for (final archivo in opciones) {
+      final nombre = _normalizarConsulta(archivo.nombre);
+      final puntaje = palabras.where(nombre.contains).length;
+      if (puntaje > puntajeMejor) {
+        puntajeMejor = puntaje;
+        mejor = archivo;
+      }
+    }
+    return mejor;
+  }
+
+  String _normalizarConsulta(String texto) {
+    const conAcentos = 'áéíóúüñ';
+    const sinAcentos = 'aeiouun';
+    var salida = texto.toLowerCase();
+    for (var i = 0; i < conAcentos.length; i++) {
+      salida = salida.replaceAll(conAcentos[i], sinAcentos[i]);
+    }
+    return salida.replaceAll(RegExp(r'\s+'), ' ').trim();
+  }
+
+  Future<void> abrirRegeneracion(String id) async {
+    try {
+      final archivo = await LocalDatabase.instance.getSavedDownload(
+        _currentUserId,
+        id,
+      );
+      if (archivo == null) {
+        state = state.copyWith(
+          errorEnvio: 'Esta regeneración ya no está en el historial local.',
+        );
+        return;
+      }
+      final resultado = await DownloadSaver.abrir(archivo);
+      if (resultado.type != ResultType.done) {
+        final mensaje = switch (resultado.type) {
+          ResultType.fileNotFound =>
+            'El archivo ya no está disponible en su ubicación guardada.',
+          ResultType.noAppToOpen =>
+            'No hay una aplicación instalada para abrir este archivo.',
+          ResultType.permissionDenied =>
+            'El sistema no permitió acceder al archivo.',
+          ResultType.error => 'El sistema no pudo abrir el archivo.',
+          ResultType.done => resultado.message,
+        };
+        state = state.copyWith(errorEnvio: mensaje);
+      }
+    } catch (error) {
+      state = state.copyWith(
+        errorEnvio: 'No se pudo abrir el archivo: ${_friendlyError(error)}',
+      );
+    }
   }
 
   Future<void> _responderReporte(

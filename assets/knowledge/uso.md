@@ -7,6 +7,7 @@ Kraken Draw es una plataforma de Kraken S.R.L. para diseñar diagramas de clases
 - Consultar el **dashboard personal**: generaciones de hoy, ayer, semana, mes y total histórico.
 - Ver la **tendencia** de generaciones, la **distribución de tecnologías** (lenguajes, frameworks, arquitecturas, ORM y bases de datos), el **mapa de actividad** y el **ranking de proyectos**.
 - Revisar el **historial de generaciones** y abrir el **visor de solo lectura** del diagrama y de los archivos descargados.
+- Regenerar proyectos ZIP y exportaciones SQL desde el historial. Al guardar puedes elegir una ubicación; si cierras el selector, el archivo se guarda en la carpeta predeterminada de KrakenDraw.
 - Gestionar el **perfil**: nombre de usuario, avatar, contraseña y plan actual.
 - Conversar con el **asistente local** sobre el uso de la app y los términos y la privacidad.
 - Generar **reportes dinámicos** a partir de las métricas personales. Los reportes requieren plan Pro; el rol administrador está exento.
@@ -25,8 +26,11 @@ Kraken Draw es una plataforma de Kraken S.R.L. para diseñar diagramas de clases
 1. Inicia sesión con tu cuenta de Kraken Draw.
 2. Revisa el dashboard y el historial de generaciones.
 3. Abre una generación para ver el diagrama o descargar sus archivos.
-4. Usa el asistente para dudas de uso, términos o privacidad.
-5. Si tienes plan Pro, pide un reporte en lenguaje natural, por ejemplo: «lenguajes más usados este mes» o «cuántas generaciones hice ayer».
+4. Después de guardar una regeneración, usa **Abrir** en el aviso o pregunta al asistente dónde quedó para encontrarla y abrirla.
+5. Usa el asistente para dudas de uso, términos o privacidad.
+6. Si tienes plan Pro, pide un reporte en lenguaje natural, por ejemplo: «lenguajes más usados este mes» o «cuántas generaciones hice ayer».
+
+El móvil conserva en el dispositivo las últimas 20 regeneraciones por cuenta para poder indicar su ubicación y volver a abrirlas. Ese historial no se sincroniza con el backend ni con otros dispositivos.
 
 ## Configuración avanzada
 

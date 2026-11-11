@@ -1,15 +1,15 @@
 // Modal de regeneración de proyecto (ZIP) desde el snapshot de un log.
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/files/download_saver.dart';
 import 'package:mobile/data/models/generacion_models.dart';
 import 'package:mobile/data/models/log_models.dart';
+import 'package:mobile/data/models/saved_download.dart';
 import 'package:mobile/presentation/dashboard/history/download/download_providers.dart';
 import 'package:mobile/presentation/dashboard/history/download/download_widgets.dart';
 import 'package:mobile/presentation/dashboard/history/logs_providers.dart';
+import 'package:mobile/presentation/auth/auth_wrapper.dart';
 import 'package:mobile/presentation/shared/widgets/neon_button.dart';
 
 /// Regenera backend / frontend / mobile a partir del diagrama guardado.
@@ -19,11 +19,11 @@ class RegenerarProyectoSheet extends ConsumerStatefulWidget {
   final LogDetalle detalle;
 
   /// Abre el modal y devuelve el archivo guardado, o null si se canceló.
-  static Future<File?> mostrar(
+  static Future<SavedDownload?> mostrar(
     BuildContext context, {
     required LogDetalle detalle,
   }) {
-    return showModalBottomSheet<File>(
+    return showModalBottomSheet<SavedDownload>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -288,6 +288,7 @@ class _RegenerarProyectoSheetState
       final guardado = await DownloadSaver.guardar(
         bytes: archivo.bytes,
         nombreArchivo: nombre,
+        userId: _userId,
       );
 
       if (!mounted) return;
@@ -299,6 +300,11 @@ class _RegenerarProyectoSheetState
         _errorGeneracion = mensajeDeError(e);
       });
     }
+  }
+
+  String get _userId {
+    final user = ref.read(authControllerProvider).user;
+    return user?.id?.toString() ?? user?.username ?? 'unknown';
   }
 
   @override
@@ -355,8 +361,7 @@ class _RegenerarProyectoSheetState
             icono: Icons.code_rounded,
             valor: _lenguajeId,
             items: [
-              for (final l in tipo.lenguajes)
-                (id: l.id, nombre: l.nombre),
+              for (final l in tipo.lenguajes) (id: l.id, nombre: l.nombre),
             ],
             onChanged: (value) => setState(() {
               _lenguajeId = value;
@@ -432,7 +437,8 @@ class _RegenerarProyectoSheetState
               'Se usa solo para regenerar la descarga; puedes modificarla.',
               style: GoogleFonts.inter(
                 fontSize: 11,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                color: Theme.of(context).colorScheme.onSurface
+                    .withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: 12),
