@@ -3,11 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/theme/neon_colors.dart';
-import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/shared/widgets/neon_background.dart';
 import 'package:mobile/presentation/shared/widgets/neon_button.dart';
 import 'package:mobile/presentation/shared/widgets/neon_input.dart';
+import 'package:mobile/presentation/shared/widgets/kraken_logo_image.dart';
 import 'package:mobile/presentation/auth/auth_wrapper.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -91,7 +90,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: NeonBackground(
@@ -355,39 +353,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   }
 
   Widget _buildLogo(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = isDark ? NeonColors.cyanDark : NeonColors.cyanLight;
-
-    return Container(
-      width: 80,
-      height: 80,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          colors: [
-            primaryColor.withValues(alpha: 0.2),
-            primaryColor.withValues(alpha: 0.05),
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: primaryColor.withValues(alpha: 0.3),
-            blurRadius: 25,
-            spreadRadius: 5,
-          ),
-        ],
-      ),
-      child: Icon(
-        Icons.bolt_rounded,
-        size: 40,
-        color: primaryColor,
-      ),
-    );
+    return const KrakenLogoImage(width: 80, height: 80);
   }
 
   Widget _buildErrorMessage(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),

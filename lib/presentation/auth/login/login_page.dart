@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/theme/neon_colors.dart';
 import 'package:mobile/core/utils/responsive.dart';
 import 'package:mobile/presentation/shared/widgets/neon_background.dart';
 import 'package:mobile/presentation/shared/widgets/neon_button.dart';
 import 'package:mobile/presentation/shared/widgets/neon_input.dart';
+import 'package:mobile/presentation/shared/widgets/kraken_logo_image.dart';
 import 'package:mobile/presentation/auth/auth_wrapper.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -364,32 +364,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Widget _buildLogo(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = isDark ? NeonColors.cyanDark : NeonColors.cyanLight;
     final logoSize = 80 * context.responsiveFontScale;
-    final iconSize = logoSize * 0.5;
-
-    return Container(
-      width: logoSize,
-      height: logoSize,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(logoSize * 0.25),
-        gradient: LinearGradient(
-          colors: [
-            primaryColor.withValues(alpha: 0.2),
-            primaryColor.withValues(alpha: 0.05),
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: primaryColor.withValues(alpha: 0.3),
-            blurRadius: 25 * context.responsiveFontScale,
-            spreadRadius: 5 * context.responsiveFontScale,
-          ),
-        ],
-      ),
-      child: Icon(Icons.bolt_rounded, size: iconSize, color: primaryColor),
-    );
+    return KrakenLogoImage(width: logoSize, height: logoSize);
   }
 
   Widget _buildErrorMessage(BuildContext context) {

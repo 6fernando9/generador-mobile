@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/theme/neon_colors.dart';
 import '../shared/widgets/neon_background.dart';
+import '../shared/widgets/kraken_logo_image.dart';
 
 /// Splash screen with animated "KrakenDraw" title and neon background
 class SplashPage extends StatefulWidget {
@@ -169,65 +170,7 @@ class _SplashPageState extends State<SplashPage>
   }
 
   Widget _buildLogo(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = isDark ? NeonColors.cyanDark : NeonColors.cyanLight;
-    final glowColor = isDark ? NeonColors.glowDark['cyan']! : NeonColors.glowLight['cyan']!;
-
-    return Container(
-      width: 120,
-      height: 120,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: LinearGradient(
-          colors: [
-            primaryColor.withValues(alpha: 0.3),
-            primaryColor.withValues(alpha: 0.1),
-            Colors.transparent,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: glowColor,
-            blurRadius: 40,
-            spreadRadius: 10,
-          ),
-          BoxShadow(
-            color: primaryColor.withValues(alpha: 0.3),
-            blurRadius: 20,
-            spreadRadius: 2,
-          ),
-        ],
-        border: Border.all(
-          color: primaryColor.withValues(alpha: 0.5),
-          width: 2,
-        ),
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Background pattern
-          CustomPaint(
-            size: const Size(120, 120),
-            painter: _LogoPatternPainter(
-              color: primaryColor,
-              isDark: isDark,
-            ),
-          ),
-          // Kraken icon
-          Icon(
-            Icons.bolt_rounded,
-            size: 56,
-            color: primaryColor,
-          ).animate(onPlay: (controller) => controller.repeat())
-            .shimmer(
-              duration: 2.seconds,
-              color: primaryColor.withValues(alpha: 0.5),
-            ),
-        ],
-      ),
-    );
+    return const KrakenLogoImage(width: 120, height: 120);
   }
 
   Widget _buildTitle(BuildContext context) {
@@ -336,45 +279,6 @@ class _SplashPageState extends State<SplashPage>
   }
 }
 
-/// Custom painter for logo background pattern
-class _LogoPatternPainter extends CustomPainter {
-  final Color color;
-  final bool isDark;
-
-  _LogoPatternPainter({required this.color, required this.isDark});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color.withValues(alpha: 0.15)
-      ..strokeWidth = 1
-      ..style = PaintingStyle.stroke;
-
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 10;
-
-    // Draw concentric circles
-    for (int i = 1; i <= 4; i++) {
-      canvas.drawCircle(center, radius * i / 4, paint);
-    }
-
-    // Draw cross lines
-    canvas.drawLine(
-      Offset(center.dx - radius, center.dy),
-      Offset(center.dx + radius, center.dy),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(center.dx, center.dy - radius),
-      Offset(center.dx, center.dy + radius),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
 /// Alternative minimal splash for faster startup
 class MinimalSplashPage extends StatelessWidget {
   const MinimalSplashPage({super.key});
@@ -391,31 +295,7 @@ class MinimalSplashPage extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                  gradient: LinearGradient(
-                    colors: [
-                      primaryColor.withValues(alpha: 0.2),
-                      primaryColor.withValues(alpha: 0.05),
-                    ],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: primaryColor.withValues(alpha: 0.3),
-                      blurRadius: 30,
-                      spreadRadius: 5,
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.bolt_rounded,
-                  size: 48,
-                  color: primaryColor,
-                ),
-              ),
+              const KrakenLogoImage(width: 100, height: 100),
               const SizedBox(height: 24),
               ShaderMask(
                 shaderCallback: (bounds) => LinearGradient(

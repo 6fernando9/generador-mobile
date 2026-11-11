@@ -5,8 +5,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/theme/neon_colors.dart'
-    show NeonColors;
 import 'package:mobile/core/network/api_client.dart';
 import 'package:mobile/core/network/services/auth_service.dart';
 import 'package:mobile/core/storage/secure_storage.dart';
@@ -18,6 +16,7 @@ import 'package:mobile/main.dart' show navigatorKey;
 import 'package:mobile/presentation/dashboard/dashboard_page.dart'
     show DashboardPage;
 import 'package:mobile/presentation/shared/widgets/neon_background.dart';
+import 'package:mobile/presentation/shared/widgets/kraken_logo_image.dart';
 import 'package:mobile/presentation/shared/widgets/skeleton_base.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -293,8 +292,6 @@ class AuthWrapper extends ConsumerWidget {
 
   Widget _buildLoadingScreen(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryColor = isDark ? NeonColors.cyanDark : NeonColors.cyanLight;
 
     return Scaffold(
       body: NeonBackground(
@@ -304,27 +301,10 @@ class AuthWrapper extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  gradient: LinearGradient(
-                    colors: [
-                      primaryColor.withValues(alpha: 0.2),
-                      primaryColor.withValues(alpha: 0.05),
-                    ],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: primaryColor.withValues(alpha: 0.3),
-                      blurRadius: 25,
-                      spreadRadius: 5,
-                    ),
-                  ],
-                ),
-                child: Icon(Icons.bolt_rounded, size: 40, color: primaryColor),
-              ).animate().fadeIn(duration: 500.ms).scale(delay: 200.ms),
+              const KrakenLogoImage(width: 80, height: 80)
+                  .animate()
+                  .fadeIn(duration: 500.ms)
+                  .scale(delay: 200.ms),
               const SizedBox(height: 24),
               Text(
                 'KrakenDraw',
