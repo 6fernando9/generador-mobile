@@ -75,24 +75,18 @@ class ReportIntentParser {
     return out.replaceAll(RegExp(r'\s+'), ' ').trim();
   }
 
-  static String? _detectCategory(String text) {
-    if (RegExp(r'\b(lenguajes?|lenguaje de programacion)\b').hasMatch(text)) {
-      return 'lenguajes';
-    }
-    if (RegExp(r'\b(frameworks?|librerias?)\b').hasMatch(text)) {
-      return 'frameworks';
-    }
-    if (RegExp(r'\b(arquitecturas?|patrones? de diseno)\b').hasMatch(text)) {
-      return 'arquitecturas';
-    }
-    if (RegExp(r'\b(orms?|mapeo objeto relacional)\b').hasMatch(text)) {
-      return 'orm';
-    }
-    if (RegExp(r'\b(bases? de datos?|bd|gestores? de bases?)\b')
-        .hasMatch(text)) {
-      return 'bd';
-    }
-    return null;
+  static List<String> _detectCategories(String text) {
+    const definitions = <(String, String)>[
+      (r'\b(lenguajes?|lenguaje de programacion)\b', 'lenguajes'),
+      (r'\b(frameworks?|librerias?)\b', 'frameworks'),
+      (r'\b(arquitecturas?|patrones? de diseno)\b', 'arquitecturas'),
+      (r'\b(orms?|mapeo objeto relacional)\b', 'orm'),
+      (r'\b(bases? de datos?|bd|gestores? de bases?)\b', 'bd'),
+    ];
+    return [
+      for (final (pattern, category) in definitions)
+        if (RegExp(pattern).hasMatch(text)) category,
+    ];
   }
 
   static bool _wantsResumen(String text) => RegExp(
@@ -100,13 +94,12 @@ class ReportIntentParser {
     r'cuantos diagramas|total de generaciones)\b',
   ).hasMatch(text);
 
-  static bool _wantsTendencia(String text) => RegExp(
-    r'\b(tendencia|evolucion|serie|linea de tiempo)\b',
-  ).hasMatch(text);
+  static bool _wantsTendencia(String text) =>
+      RegExp(r'\b(tendencia|evolucion|serie|linea de tiempo)\b').hasMatch(text);
 
-  static bool _wantsActividad(String text) => RegExp(
-    r'\b(actividad|mapa de calor|heatmap|por hora|dia de la semana)\b',
-  ).hasMatch(text);
+  static bool _wantsActividad(String text) =>
+      RegExp(r'\b(actividad|mapa de calor|heatmap|por hora|dia de la semana)\b')
+          .hasMatch(text);
 
   static bool _wantsProyectos(String text) => RegExp(
     r'\b(proyectos?|ranking de proyectos|top de proyectos|por proyecto)\b',
@@ -114,9 +107,10 @@ class ReportIntentParser {
 
   static String _detectMetric(String text, String? category) {
     if (category != null) return 'tecnologias';
-    if (RegExp(r'\b(actividad|mapa de calor|heatmap|por hora|por dia|'
-            r'dia de la semana)\b')
-        .hasMatch(text)) {
+    if (RegExp(
+      r'\b(actividad|mapa de calor|heatmap|por hora|por dia|'
+      r'dia de la semana)\b',
+    ).hasMatch(text)) {
       return 'actividad';
     }
     if (RegExp(r'\b(tendencia|evolucion|serie|linea de tiempo)\b')
@@ -133,8 +127,7 @@ class ReportIntentParser {
     return 'resumen';
   }
 
-  static DateTime _startOfDay(DateTime d) =>
-      DateTime(d.year, d.month, d.day);
+  static DateTime _startOfDay(DateTime d) => DateTime(d.year, d.month, d.day);
 
   static DateTime _endOfDay(DateTime d) =>
       DateTime(d.year, d.month, d.day, 23, 59, 59, 999);
@@ -176,9 +169,7 @@ class ReportIntentParser {
     }
 
     // Últimos N días / semanas / meses / años.
-    final daysMatch = RegExp(
-      r'ultimos?\s+(\d{1,3})\s+dias?',
-    ).firstMatch(text);
+    final daysMatch = RegExp(r'ultimos?\s+(\d{1,3})\s+dias?').firstMatch(text);
     if (daysMatch != null) {
       final days = int.tryParse(daysMatch.group(1) ?? '') ?? 7;
       return ReportRange(
@@ -188,9 +179,8 @@ class ReportIntentParser {
       );
     }
 
-    final weeksMatch = RegExp(
-      r'ultimas?\s+(\d{1,2})\s+semanas?',
-    ).firstMatch(text);
+    final weeksMatch = RegExp(r'ultimas?\s+(\d{1,2})\s+semanas?')
+        .firstMatch(text);
     if (weeksMatch != null) {
       final weeks = int.tryParse(weeksMatch.group(1) ?? '') ?? 4;
       return ReportRange(
@@ -200,9 +190,8 @@ class ReportIntentParser {
       );
     }
 
-    final monthsMatch = RegExp(
-      r'ultimos?\s+(\d{1,2})\s+meses?',
-    ).firstMatch(text);
+    final monthsMatch = RegExp(r'ultimos?\s+(\d{1,2})\s+meses?')
+        .firstMatch(text);
     if (monthsMatch != null) {
       final months = int.tryParse(monthsMatch.group(1) ?? '') ?? 3;
       return ReportRange(
@@ -212,9 +201,7 @@ class ReportIntentParser {
       );
     }
 
-    final yearsMatch = RegExp(
-      r'ultimos?\s+(\d{1,2})\s+anos?',
-    ).firstMatch(text);
+    final yearsMatch = RegExp(r'ultimos?\s+(\d{1,2})\s+anos?').firstMatch(text);
     if (yearsMatch != null) {
       final years = int.tryParse(yearsMatch.group(1) ?? '') ?? 1;
       return ReportRange(
@@ -294,7 +281,9 @@ class ReportIntentParser {
     }
     if (RegExp(r'\b(mes pasado|ultimo mes)\b').hasMatch(text)) {
       final firstThisMonth = DateTime(now.year, now.month, 1);
-      final lastPreviousMonth = firstThisMonth.subtract(const Duration(days: 1));
+      final lastPreviousMonth = firstThisMonth.subtract(
+        const Duration(days: 1),
+      );
       final firstPreviousMonth = DateTime(
         lastPreviousMonth.year,
         lastPreviousMonth.month,
@@ -316,13 +305,12 @@ class ReportIntentParser {
       final year = int.tryParse(match.group(1) ?? '') ?? now.year;
       final month = entry.value;
       final desde = DateTime(year, month, 1);
-      final hasta = DateTime(year, month + 1, 1)
-          .subtract(const Duration(milliseconds: 1));
-      return ReportRange(
-        desde: desde,
-        hasta: _endOfDay(hasta),
-        tz: timezone,
-      );
+      final hasta = DateTime(
+        year,
+        month + 1,
+        1,
+      ).subtract(const Duration(milliseconds: 1));
+      return ReportRange(desde: desde, hasta: _endOfDay(hasta), tz: timezone);
     }
 
     // Mismo rango por defecto del backend: últimos 29 días.
@@ -334,9 +322,7 @@ class ReportIntentParser {
   }
 
   static int? _detectTopN(String text) {
-    final match = RegExp(
-      r'\btop\s*(\d{1,2})\b',
-    ).firstMatch(text);
+    final match = RegExp(r'\btop\s*(\d{1,2})\b').firstMatch(text);
     if (match != null) return int.tryParse(match.group(1) ?? '');
 
     final segundo = RegExp(
@@ -356,14 +342,23 @@ class ReportIntentParser {
     ReportRange range,
     List<ReportConsultaExtra> extras,
   ) {
-    final tech = switch (categoria) {
-      'lenguajes' => 'Lenguajes más usados',
-      'frameworks' => 'Frameworks más usados',
-      'arquitecturas' => 'Arquitecturas más usadas',
-      'orm' => 'ORM más usados',
-      'bd' => 'Bases de datos más usadas',
-      _ => 'Tecnologías más usadas',
-    };
+    final techNames = (categoria ?? '')
+        .split(',')
+        .where((v) => v.isNotEmpty)
+        .map(
+          (value) => switch (value) {
+            'lenguajes' => 'lenguajes',
+            'frameworks' => 'frameworks',
+            'arquitecturas' => 'arquitecturas',
+            'orm' || 'orms' => 'ORMs',
+            'bd' || 'bases_datos' => 'bases de datos',
+            _ => 'tecnologías',
+          },
+        )
+        .toList();
+    final tech = techNames.isEmpty
+        ? 'Tecnologías más usadas'
+        : '${techNames.join(' y ')} más usados';
     final base = switch (metrica) {
       'resumen' => 'Resumen de generaciones',
       'tecnologias' => tech,
@@ -376,14 +371,16 @@ class ReportIntentParser {
         ? ''
         : ' + ${extras.map((e) {
             if (e.categoria != null) {
-              return switch (e.categoria) {
-                'lenguajes' => 'lenguajes',
-                'frameworks' => 'frameworks',
-                'arquitecturas' => 'arquitecturas',
-                'orm' => 'ORM',
-                'bd' => 'bases de datos',
-                _ => 'tecnologías',
-              };
+              return e.categoria!.split(',').map((categoria) {
+                return switch (categoria) {
+                  'lenguajes' => 'lenguajes',
+                  'frameworks' => 'frameworks',
+                  'arquitecturas' => 'arquitecturas',
+                  'orm' || 'orms' => 'ORMs',
+                  'bd' || 'bases_datos' => 'bases de datos',
+                  _ => 'tecnologías',
+                };
+              }).join(' y ');
             }
             return e.metrica;
           }).join(' + ')}';
@@ -411,7 +408,8 @@ class ReportIntentParser {
       return null;
     }
 
-    final category = _detectCategory(text);
+    final categories = _detectCategories(text);
+    final category = categories.isEmpty ? null : categories.join(',');
     final wantsResumen = _wantsResumen(text);
 
     String metrica;
@@ -420,7 +418,9 @@ class ReportIntentParser {
     if (wantsResumen) {
       metrica = 'resumen';
       if (category != null) {
-        extras.add(ReportConsultaExtra(metrica: 'tecnologias', categoria: category));
+        extras.add(
+          ReportConsultaExtra(metrica: 'tecnologias', categoria: category),
+        );
       }
       if (_wantsTendencia(text)) {
         extras.add(const ReportConsultaExtra(metrica: 'tendencia'));

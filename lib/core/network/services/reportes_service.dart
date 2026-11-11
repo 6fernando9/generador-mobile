@@ -20,17 +20,16 @@ class ReportesService {
     required ReportRange rango,
     int? limite,
   }) async {
-    final response = await _dio.get(
-      _endpoint,
-      queryParameters: {
-        'metrica': metrica,
-        if (categoria != null && categoria.isNotEmpty) 'categoria': categoria,
-        'desde': rango.desdeIso,
-        'hasta': rango.hastaIso,
-        'tz': rango.tz,
-        if (limite != null) 'limite': limite,
-      },
-    );
+    final query = <String, dynamic>{
+      'metrica': metrica,
+      if (categoria != null && categoria.isNotEmpty) 'categoria': categoria,
+      'desde': rango.desdeIso,
+      'hasta': rango.hastaIso,
+      'tz': rango.tz,
+    };
+    if (limite != null) query['limite'] = limite;
+
+    final response = await _dio.get(_endpoint, queryParameters: query);
 
     final data = response.data;
     if (data is Map<String, dynamic>) {

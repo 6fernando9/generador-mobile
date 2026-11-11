@@ -75,8 +75,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       }
     });
 
-    final totalItems =
-        state.mensajes.length + (state.generando ? 1 : 0);
+    final totalItems = state.mensajes.length + (state.generando ? 1 : 0);
     if (totalItems != _lastMessageCount) {
       _lastMessageCount = totalItems;
       _scheduleScroll();
@@ -110,9 +109,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                       : 'Modelo pendiente',
                   style: GoogleFonts.inter(
                     fontSize: 10,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
+                    color: Theme.of(context).colorScheme.onSurface
                         .withValues(alpha: 0.6),
                   ),
                 ),
@@ -156,10 +153,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                 _SetupBanner(state: state, primary: primary),
               Expanded(
                 child: state.mensajes.isEmpty && !state.generando
-                    ? _Welcome(
-                        state: state,
-                        onSuggestion: _enviarSugerencia,
-                      )
+                    ? _Welcome(state: state, onSuggestion: _enviarSugerencia)
                     : ListView.builder(
                         controller: _scroll,
                         padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -245,9 +239,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         setState(() => _listening = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'No se pudo usar el micrófono: ${error.errorMsg}',
-            ),
+            content: Text('No se pudo usar el micrófono: ${error.errorMsg}'),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -272,9 +264,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       onResult: (result) {
         if (!mounted) return;
         _input.text = result.recognizedWords;
-        _input.selection = TextSelection.collapsed(
-          offset: _input.text.length,
-        );
+        _input.selection = TextSelection.collapsed(offset: _input.text.length);
         if (result.finalResult) {
           setState(() => _listening = false);
         }
@@ -347,12 +337,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                     child: ListView.separated(
                       shrinkWrap: true,
                       itemCount: state.conversaciones.length,
-                      separatorBuilder: (_, _) =>
-                          const Divider(height: 1),
+                      separatorBuilder: (_, _) => const Divider(height: 1),
                       itemBuilder: (context, index) {
                         final conversation = state.conversaciones[index];
-                        final activa =
-                            conversation.id == state.conversacionId;
+                        final activa = conversation.id == state.conversacionId;
                         return ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: Icon(
@@ -707,14 +695,9 @@ class _Welcome extends StatelessWidget {
                       size: 16,
                       color: primary,
                     ),
-                    label: Text(
-                      texto,
-                      style: GoogleFonts.inter(fontSize: 12),
-                    ),
+                    label: Text(texto, style: GoogleFonts.inter(fontSize: 12)),
                     onPressed: () => onSuggestion(texto),
-                    side: BorderSide(
-                      color: primary.withValues(alpha: 0.25),
-                    ),
+                    side: BorderSide(color: primary.withValues(alpha: 0.25)),
                     backgroundColor: primary.withValues(alpha: 0.06),
                   ),
                 )
@@ -819,18 +802,12 @@ class _MessageBubble extends StatelessWidget {
                 TextButton.icon(
                   onPressed: () => onExport('pdf'),
                   icon: const Icon(Icons.picture_as_pdf_outlined, size: 17),
-                  label: Text(
-                    'PDF',
-                    style: GoogleFonts.inter(fontSize: 12),
-                  ),
+                  label: Text('PDF', style: GoogleFonts.inter(fontSize: 12)),
                 ),
                 TextButton.icon(
-                  onPressed: () => onExport('csv'),
+                  onPressed: () => onExport('xlsx'),
                   icon: const Icon(Icons.table_view_outlined, size: 17),
-                  label: Text(
-                    'CSV',
-                    style: GoogleFonts.inter(fontSize: 12),
-                  ),
+                  label: Text('Excel', style: GoogleFonts.inter(fontSize: 12)),
                 ),
               ],
             ),
@@ -860,11 +837,10 @@ class _MessageBubble extends StatelessWidget {
             ),
           ],
           Flexible(
-            child: bubble.animate().fadeIn(duration: 180.ms).slideY(
-              begin: 0.08,
-              end: 0,
-              duration: 180.ms,
-            ),
+            child: bubble
+                .animate()
+                .fadeIn(duration: 180.ms)
+                .slideY(begin: 0.08, end: 0, duration: 180.ms),
           ),
         ],
       ),
@@ -926,10 +902,7 @@ class _DraftBubble extends StatelessWidget {
                     Flexible(
                       child: Text(
                         texto,
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          height: 1.45,
-                        ),
+                        style: GoogleFonts.inter(fontSize: 14, height: 1.45),
                       ),
                     )
                   else

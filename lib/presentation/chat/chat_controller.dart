@@ -156,7 +156,9 @@ class ChatController extends Notifier<ChatState> {
   Future<void> _loadConversations() async {
     try {
       final userId = _currentUserId;
-      final conversaciones = await LocalDatabase.instance.listConversations(userId);
+      final conversaciones = await LocalDatabase.instance.listConversations(
+        userId,
+      );
       if (conversaciones.isEmpty) {
         final conversation = await _createConversation(userId);
         state = state.copyWith(
@@ -167,14 +169,19 @@ class ChatController extends Notifier<ChatState> {
         return;
       }
       final actual = conversaciones.first;
-      final mensajes = await LocalDatabase.instance.listMessages(userId, actual.id);
+      final mensajes = await LocalDatabase.instance.listMessages(
+        userId,
+        actual.id,
+      );
       state = state.copyWith(
         conversaciones: conversaciones,
         conversacionId: actual.id,
         mensajes: mensajes,
       );
     } catch (_) {
-      state = state.copyWith(errorEnvio: 'No se pudo abrir el historial local.');
+      state = state.copyWith(
+        errorEnvio: 'No se pudo abrir el historial local.',
+      );
     }
   }
 
@@ -240,10 +247,7 @@ class ChatController extends Notifier<ChatState> {
         },
       );
       if (!ref.mounted) return;
-      state = state.copyWith(
-        setup: AssistantSetupStatus.listo,
-        progreso: 100,
-      );
+      state = state.copyWith(setup: AssistantSetupStatus.listo, progreso: 100);
     } on DownloadCancelledException {
       if (!ref.mounted) return;
       state = state.copyWith(
@@ -269,7 +273,9 @@ class ChatController extends Notifier<ChatState> {
     await _closeChat();
     final userId = _currentUserId;
     final conversation = await _createConversation(userId);
-    final conversaciones = await LocalDatabase.instance.listConversations(userId);
+    final conversaciones = await LocalDatabase.instance.listConversations(
+      userId,
+    );
     state = state.copyWith(
       conversaciones: conversaciones,
       conversacionId: conversation.id,
@@ -285,7 +291,9 @@ class ChatController extends Notifier<ChatState> {
     final userId = _currentUserId;
     final mensajes = await LocalDatabase.instance.listMessages(userId, id);
     await LocalDatabase.instance.touchConversation(userId, id);
-    final conversaciones = await LocalDatabase.instance.listConversations(userId);
+    final conversaciones = await LocalDatabase.instance.listConversations(
+      userId,
+    );
     state = state.copyWith(
       conversaciones: conversaciones,
       conversacionId: id,
@@ -298,7 +306,9 @@ class ChatController extends Notifier<ChatState> {
   Future<void> eliminarConversacion(String id) async {
     final userId = _currentUserId;
     await LocalDatabase.instance.deleteConversation(userId, id);
-    final conversaciones = await LocalDatabase.instance.listConversations(userId);
+    final conversaciones = await LocalDatabase.instance.listConversations(
+      userId,
+    );
     if (id == state.conversacionId) {
       await _closeChat();
       if (conversaciones.isEmpty) {
@@ -311,7 +321,10 @@ class ChatController extends Notifier<ChatState> {
         return;
       }
       final siguiente = conversaciones.first;
-      final mensajes = await LocalDatabase.instance.listMessages(userId, siguiente.id);
+      final mensajes = await LocalDatabase.instance.listMessages(
+        userId,
+        siguiente.id,
+      );
       state = state.copyWith(
         conversaciones: conversaciones,
         conversacionId: siguiente.id,
@@ -345,7 +358,9 @@ class ChatController extends Notifier<ChatState> {
       titulo: _tituloDesde(contenido),
       actualizadaEn: userMessage.creadoEn,
     );
-    final conversaciones = await LocalDatabase.instance.listConversations(userId);
+    final conversaciones = await LocalDatabase.instance.listConversations(
+      userId,
+    );
 
     state = state.copyWith(
       mensajes: [...state.mensajes, userMessage],
@@ -361,11 +376,7 @@ class ChatController extends Notifier<ChatState> {
       return;
     }
 
-    await _responderConModelo(
-      conversationId,
-      contenido,
-      userMessage.id,
-    );
+    await _responderConModelo(conversationId, contenido, userMessage.id);
   }
 
   Future<void> _responderReporte(
@@ -416,7 +427,9 @@ class ChatController extends Notifier<ChatState> {
           );
           partes.add(adicional.textoCuerpo);
         } catch (_) {
-          partes.add('No pude obtener la parte "${extra.metrica}" del reporte.');
+          partes.add(
+            'No pude obtener la parte "${extra.metrica}" del reporte.',
+          );
         }
       }
 
@@ -430,6 +443,7 @@ class ChatController extends Notifier<ChatState> {
           'reporte_clave': result.clave,
           'metrica': result.intent.metrica,
           'categoria': result.intent.categoria,
+          'top_n': result.intent.topN,
           'descripcion': result.intent.descripcion,
           'generado_en': result.reporte.generadoEn.toIso8601String(),
           'desde_cache': result.desdeCache,
@@ -481,9 +495,7 @@ class ChatController extends Notifier<ChatState> {
 
       // flutter_edge_ai exige preparar el turno del usuario antes de generar.
       // Sin esta línea el modelo nunca recibe la pregunta actual.
-      await chat.addQueryChunk(
-        Message.text(text: contenido, isUser: true),
-      );
+      await chat.addQueryChunk(Message.text(text: contenido, isUser: true));
 
       final buffer = StringBuffer();
       final stream = chat.generateChatResponseAsync();
@@ -604,9 +616,11 @@ class ChatController extends Notifier<ChatState> {
     final rango = rangoJson is Map
         ? ReportRange(
             desde:
-                DateTime.tryParse('${rangoJson['desde']}') ?? cached.rango.desde,
+                DateTime.tryParse('${rangoJson['desde']}') ??
+                cached.rango.desde,
             hasta:
-                DateTime.tryParse('${rangoJson['hasta']}') ?? cached.rango.hasta,
+                DateTime.tryParse('${rangoJson['hasta']}') ??
+                cached.rango.hasta,
             tz: '${rangoJson['tz'] ?? cached.rango.tz}',
           )
         : cached.rango;
@@ -615,6 +629,7 @@ class ChatController extends Notifier<ChatState> {
       categoria: cached.categoria,
       rango: rango,
       descripcion: '${metadata['descripcion'] ?? 'Reporte'}',
+      topN: metadata['top_n'] as int?,
     );
     final result = ReportResult(
       intent: intent,
@@ -627,11 +642,12 @@ class ChatController extends Notifier<ChatState> {
       if (formato == 'pdf') {
         final file = await ReportExporter.buildPdf(
           result: result,
-          username: ref.read(authControllerProvider).user?.username ?? 'Usuario',
+          username:
+              ref.read(authControllerProvider).user?.username ?? 'Usuario',
         );
         await ReportExporter.shareFile(file);
       } else {
-        final file = await ReportExporter.buildCsv(result);
+        final file = await ReportExporter.buildExcel(result);
         await ReportExporter.shareFile(file);
       }
     } catch (e) {

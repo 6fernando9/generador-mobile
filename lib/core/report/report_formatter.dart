@@ -123,7 +123,9 @@ class ReportFormatter {
       deltas.add('mes ${_signed(data.deltas.mes!)}%');
     }
     if (deltas.isNotEmpty) {
-      buffer.write('\nVariación frente al período anterior: ${deltas.join(', ')}.');
+      buffer.write(
+        '\nVariación frente al período anterior: ${deltas.join(', ')}.',
+      );
     }
     return buffer.toString();
   }
@@ -142,19 +144,26 @@ class ReportFormatter {
           'no puedo calcular tecnologías usadas.';
     }
 
-    if (categoria != null) {
-      final items = data.itemsDe(_categoria(categoria));
-      if (items.isEmpty) {
-        return 'No registraste ${_nombreCategoria(categoria)} en el período '
-            'consultado.';
+    final categories = categoria == null
+        ? const <String>[]
+        : categoria.split(',').where((value) => value.isNotEmpty).toList();
+    if (categories.isNotEmpty) {
+      final lines = <String>[];
+      for (final selected in categories) {
+        final items = data.itemsDe(_categoria(selected));
+        if (items.isEmpty) continue;
+        final top = items.take(topN).toList();
+        lines.add('${_nombreCategoria(selected)} más usados:');
+        for (var i = 0; i < top.length; i++) {
+          lines.add(
+            '${i + 1}. ${top[i].nombre}: ${top[i].total} '
+            '(${_pct(top[i].porcentaje)})',
+          );
+        }
       }
-      final top = items.take(topN).toList();
-      final lines = <String>['${_nombreCategoria(categoria)} más usados:'];
-      for (var i = 0; i < top.length; i++) {
-        lines.add(
-          '${i + 1}. ${top[i].nombre}: ${top[i].total} '
-          '(${_pct(top[i].porcentaje)})',
-        );
+      if (lines.isEmpty) {
+        final names = categories.map(_nombreCategoria).join(' y ');
+        return 'No registraste $names en el período consultado.';
       }
       return lines.join('\n');
     }
@@ -169,9 +178,12 @@ class ReportFormatter {
     ]) {
       final items = data.itemsDe(cat);
       if (items.isEmpty) continue;
-      final top = items.take(topN.clamp(1, 10)).map((item) {
-        return '${item.nombre} (${item.total})';
-      }).join(', ');
+      final top = items
+          .take(topN.clamp(1, 10))
+          .map((item) {
+            return '${item.nombre} (${item.total})';
+          })
+          .join(', ');
       bloques.add('${cat.label}: $top');
     }
 
@@ -185,8 +197,8 @@ class ReportFormatter {
     'lenguajes' => TecnologiaCategoria.lenguajes,
     'frameworks' => TecnologiaCategoria.frameworks,
     'arquitecturas' => TecnologiaCategoria.arquitecturas,
-    'orm' => TecnologiaCategoria.orms,
-    'bd' => TecnologiaCategoria.basesDatos,
+    'orm' || 'orms' => TecnologiaCategoria.orms,
+    'bd' || 'bases_datos' => TecnologiaCategoria.basesDatos,
     _ => TecnologiaCategoria.lenguajes,
   };
 
@@ -194,8 +206,8 @@ class ReportFormatter {
     'lenguajes' => 'Lenguajes',
     'frameworks' => 'Frameworks',
     'arquitecturas' => 'Arquitecturas',
-    'orm' => 'ORM',
-    'bd' => 'Bases de datos',
+    'orm' || 'orms' => 'ORMs',
+    'bd' || 'bases_datos' => 'Bases de datos',
     _ => 'Tecnologías',
   };
 
@@ -209,7 +221,8 @@ class ReportFormatter {
       'Total de generaciones en el período: ${data.total}.',
     );
 
-    final dias = [...data.porDiaSemana]..sort((a, b) => b.total.compareTo(a.total));
+    final dias = [...data.porDiaSemana]
+      ..sort((a, b) => b.total.compareTo(a.total));
     final topDias = dias.where((d) => d.total > 0).take(3).toList();
     if (topDias.isNotEmpty) {
       buffer.write(
@@ -246,11 +259,15 @@ class ReportFormatter {
       '\nPrimer período: ${serie.first.periodo} con ${serie.first.total}. '
       'Último: ${serie.last.periodo} con ${serie.last.total}.',
     );
-    buffer.write('\nPico: ${pico.periodo} con ${_plural(pico.total, 'generación', 'generaciones')}.');
+    buffer.write(
+      '\nPico: ${pico.periodo} con ${_plural(pico.total, 'generación', 'generaciones')}.',
+    );
 
     final tipos = <String, int>{};
     for (final point in serie) {
-      point.porTipo.forEach((key, value) => tipos[key] = (tipos[key] ?? 0) + value);
+      point.porTipo.forEach(
+        (key, value) => tipos[key] = (tipos[key] ?? 0) + value,
+      );
     }
     if (tipos.isNotEmpty) {
       final ordenados = tipos.entries.toList()
@@ -274,9 +291,7 @@ class ReportFormatter {
     final lines = <String>['Proyectos con más generaciones:'];
     for (var i = 0; i < top.length; i++) {
       final p = top[i];
-      lines.add(
-        '${i + 1}. ${p.nombre}: ${p.total} (${_pct(p.porcentaje)})',
-      );
+      lines.add('${i + 1}. ${p.nombre}: ${p.total} (${_pct(p.porcentaje)})');
     }
     return lines.join('\n');
   }
